@@ -32,7 +32,7 @@ def main() -> None:
                 if args.query in movie['title']:
                     movie_list.append(movie)
 
-            for movie in movie_list:
+            for movie in movie_list[:5]:
                 print(f"{movie['id']}. {movie['title']}")
 
             
