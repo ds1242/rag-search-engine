@@ -16,10 +16,12 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     return results
 
 
-def preprocess_text(text: str) -> str:
+def preprocess_text(text: str) -> list[str]:
     text = text.lower()
 
     translator = str.maketrans('', '', string.punctuation)
     text = text.translate(translator)
 
-    return text
+    words = text.split()
+
+    return words
