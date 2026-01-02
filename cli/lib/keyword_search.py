@@ -6,33 +6,37 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     results = []
 
     for movie in movies:
-        preprocessed_query = preprocess_text(query)
-        preprocessed_title = preprocess_text(movie['title'])
+        query_tokens = tokenize_text(query)
+        title_tokens = tokenize_text(movie['title'])
 
-        
-        if len(results) >= limit:
-            break
-
-        matched = False
-        for query_word in preprocessed_query:
-            if matched:
+        if has_matching_tokens(query_tokens, title_tokens):
+            results.append(movie)
+            if len(results) >= limit:
                 break
-
-            for title_word in preprocessed_title:
-                if query_word in title_word:
-                    results.append(movie)
-                    matched = True
-                    break
 
     return results
 
+def has_matching_tokens(query_tokens: list[str], title_tokens: list[str]) -> bool:
+    for query_token in query_tokens:
+        for title_token in title_tokens:
+            if query_token in title_token:
+                return True
+    return False
 
-def preprocess_text(text: str) -> list[str]:
+def preprocess_text(text: str) -> str:
     text = text.lower()
 
     translator = str.maketrans('', '', string.punctuation)
     text = text.translate(translator)
 
-    words = text.split()
+    return text 
 
-    return words
+
+def tokenize_text(text: str) -> list[str]:
+    text = preprocess_text(text)
+    tokens = text.split()
+    valid_tokens = []
+    for token in tokens:
+        if token:
+            valid_tokens.append(token)
+    return valid_tokens
