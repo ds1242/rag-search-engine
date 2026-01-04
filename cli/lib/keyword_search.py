@@ -1,16 +1,21 @@
 import string
-
+import os
+from collections import defaultdict
 from .word_utils import load_stopwords
-from .search_utils import DEFAULT_SEARCH_LIMIT, load_movies
+from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies
 from nltk.stem import PorterStemmer 
+import pickle
+
+CACHE_ROOT = os.path.dirname(__file__)
+
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     movies = load_movies()
     results = []
 
     for movie in movies:
-        query_tokens = stem_words(query)
-        title_tokens = stem_words(movie['title'])
+        query_tokens = tokenize_text(query)
+        title_tokens = tokenize_text(movie['title'])
 
         if has_matching_tokens(query_tokens, title_tokens):
             results.append(movie)
@@ -42,33 +47,59 @@ def tokenize_text(text: str) -> list[str]:
     for token in tokens:
         if token:
             valid_tokens.append(token)
-    return valid_tokens
 
-
-def remove_stopwords(text: str) -> list[str]:
     stopwords = load_stopwords()
-
-    valid_tokens = tokenize_text(text)
-
     for token in list(valid_tokens):
         if token in stopwords:
             valid_tokens.remove(token)
 
-    return valid_tokens
-
-def stem_words(text: str) -> list[str]:
-
-    valid_words = remove_stopwords(text)
-
     stemmer = PorterStemmer()
+    stemmed_words = []
 
-    stemmed_list = []
+    for token in valid_tokens:
+        stemmed_word = stemmer.stem(token)
+        stemmed_words.append(stemmed_word)
 
-    for word in valid_words:
-        stemmed_word = stemmer.stem(word)
-        stemmed_list.append(stemmed_word)
+    return stemmed_words
 
-    return stemmed_list
+ 
+class InvertedIndex:
+    index: dict[str, set[int]]
+    docmap: dict[int, dict]
+
+    def __init__(self):
+        self.index = defaultdict(set)
+        self.docmap = {}
+
+    def __add_document(self, doc_id, text):
+        text_tokens = tokenize_text(text)
+        unique_tokens = set(text_tokens)
+        for token in unique_tokens:
+            self.index[token].add(doc_id)
+
+    def get_documents(self, term):
+        documents = self.index.get(term, set())
+        return sorted(documents)
+
+    def build(self):
+        movies = load_movies()
+        for movie in movies:
+            doc_id = movie['id']
+            self.__add_document(doc_id, f"{movie['title']} {movie['description']}")
+            self.docmap[doc_id] = movie
+
+    def save(self):
+        cache_dir = os.path.join(PROJECT_ROOT, "cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        index_path = os.path.join(cache_dir, "index.pkl")
+        docmap_path = os.path.join(cache_dir, "docmap.pkl")
+
+        with open(index_path, 'wb') as file:
+            pickle.dump(self.index, file)
 
 
-            
+        with open(docmap_path, 'wb') as f:
+            pickle.dump(self.docmap, f)
+
+
+
