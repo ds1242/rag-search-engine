@@ -9,8 +9,8 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     results = []
 
     for movie in movies:
-        query_tokens = remove_stopwords(query)
-        title_tokens = remove_stopwords(movie['title'])
+        query_tokens = tokenize_text(query)
+        title_tokens = tokenize_text(movie['title'])
 
         if has_matching_tokens(query_tokens, title_tokens):
             results.append(movie)
@@ -42,14 +42,8 @@ def tokenize_text(text: str) -> list[str]:
     for token in tokens:
         if token:
             valid_tokens.append(token)
-    return valid_tokens
 
-
-def remove_stopwords(text: str) -> list[str]:
     stopwords = load_stopwords()
-
-    valid_tokens = tokenize_text(text)
-
     for token in list(valid_tokens):
         if token in stopwords:
             valid_tokens.remove(token)
@@ -63,4 +57,20 @@ def remove_stopwords(text: str) -> list[str]:
 
     return stemmed_words
 
-            
+ 
+class InvertedIndex:
+    index: dict[str, set[int]]
+    docmap: dict[int, dict]
+
+    def __init__(self):
+        self.index = {}
+        self.docmap = {}
+
+    def __add_document(self, doc_id, text):
+        text_tokens = remove_stopwords(text)
+        for token in text_tokens:
+            self.index[token] = doc_id
+
+
+
+
