@@ -1,5 +1,5 @@
 import string
-
+from collections import defaultdict
 from .word_utils import load_stopwords
 from .search_utils import DEFAULT_SEARCH_LIMIT, load_movies
 from nltk.stem import PorterStemmer 
@@ -63,13 +63,18 @@ class InvertedIndex:
     docmap: dict[int, dict]
 
     def __init__(self):
-        self.index = {}
+        self.index = defaultdict(set)
         self.docmap = {}
 
     def __add_document(self, doc_id, text):
-        text_tokens = remove_stopwords(text)
-        for token in text_tokens:
-            self.index[token] = doc_id
+        text_tokens = tokenize_text(text)
+        unique_tokens = set(text_tokens)
+        for token in unique_tokens:
+            self.index[token].add(doc_id)
+
+    def get_documents(self, term):
+        documents = self.index[term]
+        print(documents)
 
 
 
