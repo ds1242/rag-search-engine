@@ -1,7 +1,6 @@
-from os.path import isfile
 import string
 import os
-from collections import defaultdict
+from collections import Counter, defaultdict
 from .word_utils import load_stopwords
 from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies
 from nltk.stem import PorterStemmer 
@@ -77,10 +76,10 @@ def build_command():
 
 
 class InvertedIndex:
-
     def __init__(self):
         self.index = defaultdict(set)
         self.docmap = {}
+        self.term_frequencies = dict[int, Counter[str]]
         self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
         self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
 
