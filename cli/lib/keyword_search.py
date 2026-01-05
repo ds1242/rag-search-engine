@@ -1,3 +1,4 @@
+from os.path import isfile
 import string
 import os
 from collections import defaultdict
@@ -100,6 +101,27 @@ class InvertedIndex:
 
         with open(docmap_path, 'wb') as f:
             pickle.dump(self.docmap, f)
+
+    def load(self):
+        cache_dir = os.path.join(PROJECT_ROOT, "cache")
+        index_path = os.path.join(cache_dir, "index.pkl")
+        docmap_path = os.path.join(cache_dir, "docmap.pkl")
+        
+        if os.path.isfile(index_path):
+            with open(index_path, "rb") as f:
+                self.index = pickle.load(f)
+        else:
+            raise Exception("file does not exist")
+
+        if os.path.isfile(docmap_path):
+            with open(docmap_path, "rb") as f:
+                self.docmap = pickle.load(f)
+        else:
+            raise Exception("file does not exist")
+
+        print("loaded successfully")
+
+
 
 
 

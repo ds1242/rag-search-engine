@@ -15,20 +15,24 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    index = InvertedIndex()
+
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
             results = search_command(args.query)
+            try:
+                index.load()
+            except Exception as e:
+                print(f"Error: {e}")
+                return
 
             for i, res in enumerate(results, 1):
                 print(f"{i}. {res['title']}")
         case "build":
-            index = InvertedIndex()
             index.build()
             index.save()
 
-            docs = index.get_documents("merida")
-            print(f"First document for token 'merida' = {docs[0]}")
         case _:
             parser.print_help()
 
