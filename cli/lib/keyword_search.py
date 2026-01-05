@@ -1,3 +1,4 @@
+from os.path import isfile
 import string
 import os
 from collections import Counter, defaultdict
@@ -82,12 +83,19 @@ class InvertedIndex:
         self.term_frequencies = dict[int, Counter[str]]
         self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
         self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
+        self.tf_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "term_frequencies.pkl")
 
     def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
+        if doc_id not in self.term_frequencies:
+            self.term_frequencies[doc_id] = Counter()
+
         unique_tokens = set(text_tokens)
         for token in unique_tokens:
             self.index[token].add(doc_id)
+            
+        for token in text_tokens:
+            self.term_frequencies[doc_id][token] += 1
 
     def get_documents(self, term) -> list[int]:
         documents = self.index.get(term, set())
@@ -107,6 +115,8 @@ class InvertedIndex:
             pickle.dump(self.index, file)
         with open(self.docmap_path, 'wb') as f:
             pickle.dump(self.docmap, f)
+        with open(self.tf_path, 'wb') as f:
+            pickle.dump(self.docmap, f)
 
     def load(self) -> None:
         if os.path.isfile(self.index_path):
@@ -118,6 +128,12 @@ class InvertedIndex:
         if os.path.isfile(self.docmap_path):
             with open(self.docmap_path, "rb") as f:
                 self.docmap = pickle.load(f)
+        else:
+            raise Exception("file does not exist")
+
+        if os.path.isfile(self.tf_path):
+            with open(self.tf_path, "rb") as f:
+                self.term_frequencies = pickle.load(f)
         else:
             raise Exception("file does not exist")
 
