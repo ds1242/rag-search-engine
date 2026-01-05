@@ -11,17 +11,23 @@ CACHE_ROOT = os.path.dirname(__file__)
 
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
-    movies = load_movies()
+    index = InvertedIndex()
+    query_tokens = tokenize_text(query)
     results = []
 
-    for movie in movies:
-        query_tokens = tokenize_text(query)
-        title_tokens = tokenize_text(movie['title'])
-
-        if has_matching_tokens(query_tokens, title_tokens):
-            results.append(movie)
-            if len(results) >= limit:
-                break
+    try:
+        index.load()
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        return []
+    
+    for token in query_tokens:
+        docs = index.get_documents(token)
+        if docs is not None:
+            for doc in docs:
+                if len(results) >= DEFAULT_SEARCH_LIMIT:
+                    break
+                results.append(index.docmap[doc])
 
     return results
 
@@ -63,7 +69,12 @@ def tokenize_text(text: str) -> list[str]:
 
     return stemmed_words
 
- 
+def build_command():
+    index = InvertedIndex()
+    index.build()
+    index.save()
+
+
 class InvertedIndex:
     index: dict[str, set[int]]
     docmap: dict[int, dict]
@@ -119,7 +130,6 @@ class InvertedIndex:
         else:
             raise Exception("file does not exist")
 
-        print("loaded successfully")
 
 
 
