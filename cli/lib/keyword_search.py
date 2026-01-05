@@ -25,7 +25,7 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
         docs = index.get_documents(token)
         if docs is not None:
             for doc in docs:
-                if len(results) >= DEFAULT_SEARCH_LIMIT:
+                if len(results) >= limit:
                     break
                 results.append(index.docmap[doc])
 
@@ -76,56 +76,47 @@ def build_command():
 
 
 class InvertedIndex:
-    index: dict[str, set[int]]
-    docmap: dict[int, dict]
 
     def __init__(self):
         self.index = defaultdict(set)
         self.docmap = {}
+        self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
+        self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
 
-    def __add_document(self, doc_id, text):
+    def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
         unique_tokens = set(text_tokens)
         for token in unique_tokens:
             self.index[token].add(doc_id)
 
-    def get_documents(self, term):
+    def get_documents(self, term) -> list[int]:
         documents = self.index.get(term, set())
         return sorted(documents)
 
-    def build(self):
+    def build(self) -> None:
         movies = load_movies()
         for movie in movies:
             doc_id = movie['id']
             self.__add_document(doc_id, f"{movie['title']} {movie['description']}")
             self.docmap[doc_id] = movie
 
-    def save(self):
+    def save(self) -> None:
         cache_dir = os.path.join(PROJECT_ROOT, "cache")
         os.makedirs(cache_dir, exist_ok=True)
-        index_path = os.path.join(cache_dir, "index.pkl")
-        docmap_path = os.path.join(cache_dir, "docmap.pkl")
-
-        with open(index_path, 'wb') as file:
+        with open(self.index_path, 'wb') as file:
             pickle.dump(self.index, file)
-
-
-        with open(docmap_path, 'wb') as f:
+        with open(self.docmap_path, 'wb') as f:
             pickle.dump(self.docmap, f)
 
-    def load(self):
-        cache_dir = os.path.join(PROJECT_ROOT, "cache")
-        index_path = os.path.join(cache_dir, "index.pkl")
-        docmap_path = os.path.join(cache_dir, "docmap.pkl")
-        
-        if os.path.isfile(index_path):
-            with open(index_path, "rb") as f:
+    def load(self) -> None:
+        if os.path.isfile(self.index_path):
+            with open(self.index_path, "rb") as f:
                 self.index = pickle.load(f)
         else:
             raise Exception("file does not exist")
 
-        if os.path.isfile(docmap_path):
-            with open(docmap_path, "rb") as f:
+        if os.path.isfile(self.docmap_path):
+            with open(self.docmap_path, "rb") as f:
                 self.docmap = pickle.load(f)
         else:
             raise Exception("file does not exist")
