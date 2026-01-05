@@ -70,32 +70,33 @@ def tokenize_text(text: str) -> list[str]:
 
     return stemmed_words
 
-def build_command():
+def build_command() -> None:
     index = InvertedIndex()
     index.build()
     index.save()
+
+def tf_command(doc_id, term) -> int:
+    index = InvertedIndex()
+    index.load()
+    count = index.get_tf(doc_id, term)
+    return count
 
 
 class InvertedIndex:
     def __init__(self):
         self.index = defaultdict(set)
         self.docmap = {}
-        self.term_frequencies = dict[int, Counter[str]]
+        self.term_frequencies = defaultdict(Counter)
         self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
         self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
         self.tf_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "term_frequencies.pkl")
 
     def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
-        if doc_id not in self.term_frequencies:
-            self.term_frequencies[doc_id] = Counter()
-
         unique_tokens = set(text_tokens)
         for token in unique_tokens:
             self.index[token].add(doc_id)
-            
-        for token in text_tokens:
-            self.term_frequencies[doc_id][token] += 1
+        self.term_frequencies[doc_id].update(text_tokens)            
 
     def get_documents(self, term) -> list[int]:
         documents = self.index.get(term, set())
@@ -116,7 +117,7 @@ class InvertedIndex:
         with open(self.docmap_path, 'wb') as f:
             pickle.dump(self.docmap, f)
         with open(self.tf_path, 'wb') as f:
-            pickle.dump(self.docmap, f)
+            pickle.dump(self.term_frequencies, f)
 
     def load(self) -> None:
         if os.path.isfile(self.index_path):
@@ -137,8 +138,12 @@ class InvertedIndex:
         else:
             raise Exception("file does not exist")
 
-
-
-
+    def get_tf(self, doc_id, term) -> int:
+        token_term = tokenize_text(term)
+        if len(token_term) != 1:
+            raise ValueError('too many terms')
+        
+        token = token_term[0]
+        return self.term_frequencies[doc_id].get(token, 0)
 
 
