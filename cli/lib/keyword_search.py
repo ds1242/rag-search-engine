@@ -12,22 +12,23 @@ CACHE_ROOT = os.path.dirname(__file__)
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     index = InvertedIndex()
-    query_tokens = tokenize_text(query)
-    results = []
-
     try:
         index.load()
     except FileNotFoundError as e:
         print(f"Error: {e}")
         return []
     
+    query_tokens = tokenize_text(query)
+    seen, results = set(), []
     for token in query_tokens:
-        docs = index.get_documents(token)
-        if docs is not None:
-            for doc in docs:
-                if len(results) >= limit:
-                    break
-                results.append(index.docmap[doc])
+        matching_ids = index.get_documents(token)
+        for id in matching_ids:
+            if id in seen:
+                continue
+            seen.add(id)
+            results.append(index.docmap[id])
+            if len(results) >= limit:
+                break
 
     return results
 
