@@ -75,21 +75,20 @@ def build_command() -> None:
     index.build()
     index.save()
 
-def tf_command(doc_id, term) -> int:
+def tf_command(doc_id: int, term: str) -> int:
     index = InvertedIndex()
     index.load()
     count = index.get_tf(doc_id, term)
     return count
 
-def idf_command(term) -> float:
+def idf_command(term: str) -> float:
     index = InvertedIndex()
     index.load()
-    matched_docs = index.get_documents(term)
-    idf_value = math.log((len(index.docmap) + 1) / (len(matched_docs) + 1))
+    return index.get_idf(term)
 
-    return idf_value
-
-
+def tfidf_command(doc_id: int, term: str) -> float:
+    index = InvertedIndex()
+    index.load()
 
 class InvertedIndex:
     def __init__(self):
@@ -107,14 +106,9 @@ class InvertedIndex:
             self.index[token].add(doc_id)
         self.term_frequencies[doc_id].update(text_tokens)            
 
-    def get_documents(self, term) -> list[int]:
-        token_term = tokenize_text(term)
-        if len(token_term) != 1:
-            raise ValueError('too many terms')
-        
-        token = token_term[0]
-        documents = self.index.get(token, set())
-        return sorted(documents)
+    def get_documents(self, term: str) -> list[int]:
+        documents = self.index.get(term, set())
+        return sorted(list(documents))
 
     def build(self) -> None:
         movies = load_movies()
@@ -152,12 +146,22 @@ class InvertedIndex:
         else:
             raise Exception("file does not exist")
 
-    def get_tf(self, doc_id, term) -> int:
+    def get_tf(self, doc_id: int, term: str) -> int:
         token_term = tokenize_text(term)
         if len(token_term) != 1:
             raise ValueError('too many terms')
         
         token = token_term[0]
         return self.term_frequencies[doc_id].get(token, 0)
+
+    def get_idf(self, term: str) -> float:
+        token_term = tokenize_text(term)
+        if len(token_term) != 1:
+            raise ValueError("term must be a single token")
+
+        token = token_term[0]
+        matched_count = len(self.index[token]) 
+        total_doc_count = len(self.docmap)
+        return math.log((total_doc_count + 1) / (matched_count + 1))
 
 
