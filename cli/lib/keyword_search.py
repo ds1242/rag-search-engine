@@ -6,7 +6,7 @@ import math
 from collections import Counter, defaultdict
 
 from .word_utils import load_stopwords
-from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
+from .search_utils import BM25_B, PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
 from nltk.stem import PorterStemmer 
 
 CACHE_ROOT = os.path.dirname(__file__)
@@ -125,6 +125,16 @@ class InvertedIndex:
             self.index[token].add(doc_id)
         self.term_frequencies[doc_id].update(text_tokens)            
 
+    def __get_avg_doc_length(self) -> float:
+        if len(self.doc_lengths) == 0:
+            return 0.0
+
+        doc_total = 0
+        for _, value in self.doc_lengths.items():
+            doc_total += value 
+
+        return doc_total / len(self.doc_lengths)
+
     def get_documents(self, term: str) -> list[int]:
         documents = self.index.get(term, set())
         return sorted(list(documents))
@@ -208,8 +218,11 @@ class InvertedIndex:
 
         return math.log((total_docs_count - matched_doc_count + 0.5) / (matched_doc_count + 0.5) + 1)
 
-    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1):
+    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1, b=BM25_B):
         tf = self.get_tf(doc_id, term)
         bm25_sat_val = (tf * (k1 + 1)) / (tf + k1)
+        
+        avg_length = __get_avg_doc_length()
+        length_norm = 1 - b + b * ()
         return bm25_sat_val
 
