@@ -1,3 +1,4 @@
+from os.path import isfile
 import string
 import os
 import pickle
@@ -118,12 +119,11 @@ class InvertedIndex:
 
     def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
+        self.doc_lengths[doc_id] = len(text_tokens)
         unique_tokens = set(text_tokens)
         for token in unique_tokens:
             self.index[token].add(doc_id)
         self.term_frequencies[doc_id].update(text_tokens)            
-        # TODO: Start here tomorrow
-        self.doc_lengths[doc_id] = len()
 
     def get_documents(self, term: str) -> list[int]:
         documents = self.index.get(term, set())
@@ -145,6 +145,8 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
         with open(self.tf_path, 'wb') as f:
             pickle.dump(self.term_frequencies, f)
+        with open(self.doc_lengths_path, 'wb') as f:
+            pickle.dump(self.doc_lengths, f)
 
     def load(self) -> None:
         if os.path.isfile(self.index_path):
@@ -162,6 +164,12 @@ class InvertedIndex:
         if os.path.isfile(self.tf_path):
             with open(self.tf_path, "rb") as f:
                 self.term_frequencies = pickle.load(f)
+        else:
+            raise Exception("file does not exist")
+
+        if os.path.isfile(self.doc_lengths_path):
+            with open(self.doc_lengths_path, "rb") as f:
+                self.doc_lengths = pickle.load(f)
         else:
             raise Exception("file does not exist")
 
@@ -205,4 +213,3 @@ class InvertedIndex:
         bm25_sat_val = (tf * (k1 + 1)) / (tf + k1)
         return bm25_sat_val
 
-    def
