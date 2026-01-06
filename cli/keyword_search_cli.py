@@ -17,6 +17,7 @@ def main() -> None:
     search_parser.add_argument("term", type=str, help="Term to check frequency")
 
     search_parser = subparsers.add_parser("idf", help="Get inverse document frequency of a term")
+    search_parser.add_argument("idf_term", help="Term to check idf value")
 
     args = parser.parse_args()
 
@@ -37,7 +38,8 @@ def main() -> None:
             count = tf_command(args.doc_id, args.term)
             print(f"{count}")
         case "idf":
-            idf_val = idf_command(args.query)
+            idf_val = idf_command(args.idf_term)
+            print(f"Inverse document frequency of '{args.idf_term}' : {idf_val:.2f}")
         case _:
             parser.print_help()
 

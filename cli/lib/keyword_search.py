@@ -1,11 +1,11 @@
-from os.path import isfile
 import string
 import os
+import pickle
+import math
 from collections import Counter, defaultdict
 from .word_utils import load_stopwords
 from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies
 from nltk.stem import PorterStemmer 
-import pickle
 
 CACHE_ROOT = os.path.dirname(__file__)
 
@@ -84,6 +84,10 @@ def tf_command(doc_id, term) -> int:
 def idf_command(term) -> float:
     index = InvertedIndex()
     index.load()
+    matched_docs = index.get_documents(term)
+    idf_value = math.log((len(index.docmap) + 1) / (len(matched_docs) + 1))
+
+    return idf_value
 
 
 
@@ -104,7 +108,12 @@ class InvertedIndex:
         self.term_frequencies[doc_id].update(text_tokens)            
 
     def get_documents(self, term) -> list[int]:
-        documents = self.index.get(term, set())
+        token_term = tokenize_text(term)
+        if len(token_term) != 1:
+            raise ValueError('too many terms')
+        
+        token = token_term[0]
+        documents = self.index.get(token, set())
         return sorted(documents)
 
     def build(self) -> None:
