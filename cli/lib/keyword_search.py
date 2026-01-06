@@ -91,6 +91,11 @@ def tfidf_command(doc_id: int, term: str) -> float:
     index.load()
     return index.get_tfidf(doc_id, term)
 
+def bm25_idf_command(term: str) -> float:
+    index = InvertedIndex()
+    index.load()
+    return index.get_bm25_idf(term)
+
 class InvertedIndex:
     def __init__(self):
         self.index = defaultdict(set)
@@ -170,5 +175,16 @@ class InvertedIndex:
         tf_value = self.get_tf(doc_id, term)
 
         return tf_value * idf_value
+
+    def get_bm25_idf(self, term: str) -> float:
+        token_term = tokenize_text(term)
+        if len(token_term) != 1:
+            raise ValueError("to many terms")
+
+        token = token_term[0]
+        total_docs_count = len(self.docmap)
+        matched_doc_count = len(self.index[token])
+
+        return math.log((total_docs_count - matched_doc_count + 0.5) / (matched_doc_count + 0.5) + 1)
 
 
