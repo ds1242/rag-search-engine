@@ -3,6 +3,8 @@ import os
 import pickle
 import math
 from collections import Counter, defaultdict
+
+from config import BM25_K1
 from .word_utils import load_stopwords
 from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies
 from nltk.stem import PorterStemmer 
@@ -96,6 +98,14 @@ def bm25_idf_command(term: str) -> float:
     index.load()
     return index.get_bm25_idf(term)
 
+def bm25_tf_command(doc_id: int, term: str) -> float:
+    idx = InvertedIndex()
+    idx.load()
+
+    bm25_tf = idx.get_bm25_tf(doc_id, term)
+
+    return bm25_tf
+
 class InvertedIndex:
     def __init__(self):
         self.index = defaultdict(set)
@@ -187,4 +197,7 @@ class InvertedIndex:
 
         return math.log((total_docs_count - matched_doc_count + 0.5) / (matched_doc_count + 0.5) + 1)
 
-
+    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1):
+        tf = self.get_tf(doc_id, term)
+        bm25_sat_val = (tf * (k1 + 1)) / (tf + k1)
+        return bm25_sat_val
