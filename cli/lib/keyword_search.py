@@ -166,6 +166,9 @@ class InvertedIndex:
         return math.log((total_doc_count + 1) / (matched_count + 1))
 
     def get_tfidf(self, doc_id: int, term: str) -> float:
-        pass
+        idf_value = self.get_idf(term)
+        tf_value = self.get_tf(doc_id, term)
+
+        return tf_value * idf_value
 
 

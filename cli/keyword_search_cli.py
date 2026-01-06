@@ -47,7 +47,7 @@ def main() -> None:
             print(f"Inverse document frequency of '{args.idf_term}' : {idf_val:.2f}")
         case "tfidf":
             tfidf_val = tfidf_command(args.doc_id, args.term)
-            print(tfidf_val)
+            print(f"TF-IDF scoer of '{args.term}' in document '{args.doc_id}' : {tfidf_val:.2f}")
         case _:
             parser.print_help()
 
