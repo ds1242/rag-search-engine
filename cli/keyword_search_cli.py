@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from re import search
 
 from lib.keyword_search import build_command, search_command, tf_command, idf_command, tfidf_command
 
@@ -20,6 +21,8 @@ def main() -> None:
     search_parser.add_argument("idf_term", help="Term to check idf value")
 
     search_parser = subparsers.add_parser("tfidf", help="Get the TF-IDF score for a given a document id and term")
+    search_parser.add_argument("doc_id", type=int, help="Document ID to generate TI-IDF value")
+    search_parser.add_argument("term", type=str, help="Term needed to generate the TI-IDF value")
 
     args = parser.parse_args()
 

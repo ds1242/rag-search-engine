@@ -89,6 +89,7 @@ def idf_command(term: str) -> float:
 def tfidf_command(doc_id: int, term: str) -> float:
     index = InvertedIndex()
     index.load()
+    return index.get_tfidf(doc_id, term)
 
 class InvertedIndex:
     def __init__(self):
@@ -163,5 +164,8 @@ class InvertedIndex:
         matched_count = len(self.index[token]) 
         total_doc_count = len(self.docmap)
         return math.log((total_doc_count + 1) / (matched_count + 1))
+
+    def get_tfidf(self, doc_id: int, term: str) -> float:
+        pass
 
 
