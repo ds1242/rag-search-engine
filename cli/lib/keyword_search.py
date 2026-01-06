@@ -3,8 +3,9 @@ import os
 import pickle
 import math
 from collections import Counter, defaultdict
+
 from .word_utils import load_stopwords
-from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies
+from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
 from nltk.stem import PorterStemmer 
 
 CACHE_ROOT = os.path.dirname(__file__)
@@ -91,14 +92,29 @@ def tfidf_command(doc_id: int, term: str) -> float:
     index.load()
     return index.get_tfidf(doc_id, term)
 
+def bm25_idf_command(term: str) -> float:
+    index = InvertedIndex()
+    index.load()
+    return index.get_bm25_idf(term)
+
+def bm25_tf_command(doc_id: int, term: str, k1: float = BM25_K1) -> float:
+    idx = InvertedIndex()
+    idx.load()
+
+    bm25_tf = idx.get_bm25_tf(doc_id, term)
+
+    return bm25_tf
+
 class InvertedIndex:
     def __init__(self):
         self.index = defaultdict(set)
         self.docmap = {}
         self.term_frequencies = defaultdict(Counter)
+        self.doc_lengths = {}
         self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
         self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
         self.tf_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "term_frequencies.pkl")
+        self.doc_lengths_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "doc_lengths.pkl")
 
     def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
@@ -106,6 +122,8 @@ class InvertedIndex:
         for token in unique_tokens:
             self.index[token].add(doc_id)
         self.term_frequencies[doc_id].update(text_tokens)            
+        # TODO: Start here tomorrow
+        self.doc_lengths[doc_id] = len()
 
     def get_documents(self, term: str) -> list[int]:
         documents = self.index.get(term, set())
@@ -171,4 +189,20 @@ class InvertedIndex:
 
         return tf_value * idf_value
 
+    def get_bm25_idf(self, term: str) -> float:
+        token_term = tokenize_text(term)
+        if len(token_term) != 1:
+            raise ValueError("to many terms")
 
+        token = token_term[0]
+        total_docs_count = len(self.docmap)
+        matched_doc_count = len(self.index[token])
+
+        return math.log((total_docs_count - matched_doc_count + 0.5) / (matched_doc_count + 0.5) + 1)
+
+    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1):
+        tf = self.get_tf(doc_id, term)
+        bm25_sat_val = (tf * (k1 + 1)) / (tf + k1)
+        return bm25_sat_val
+
+    def
