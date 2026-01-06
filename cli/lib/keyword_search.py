@@ -110,9 +110,11 @@ class InvertedIndex:
         self.index = defaultdict(set)
         self.docmap = {}
         self.term_frequencies = defaultdict(Counter)
+        self.doc_lengths = {}
         self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
         self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
         self.tf_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "term_frequencies.pkl")
+        self.doc_lengths_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "doc_lengths.pkl")
 
     def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
@@ -120,6 +122,8 @@ class InvertedIndex:
         for token in unique_tokens:
             self.index[token].add(doc_id)
         self.term_frequencies[doc_id].update(text_tokens)            
+        # TODO: Start here tomorrow
+        self.doc_lengths[doc_id] = len()
 
     def get_documents(self, term: str) -> list[int]:
         documents = self.index.get(term, set())
@@ -200,3 +204,5 @@ class InvertedIndex:
         tf = self.get_tf(doc_id, term)
         bm25_sat_val = (tf * (k1 + 1)) / (tf + k1)
         return bm25_sat_val
+
+    def
