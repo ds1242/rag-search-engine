@@ -2,7 +2,7 @@
 
 import argparse
 
-from config import BM25_K1
+from lib.search_utils import BM25_K1
 from lib.keyword_search import bm25_idf_command, bm25_tf_command, build_command, search_command, tf_command, idf_command, tfidf_command
 
 def main() -> None:

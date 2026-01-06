@@ -4,9 +4,8 @@ import pickle
 import math
 from collections import Counter, defaultdict
 
-from config import BM25_K1
 from .word_utils import load_stopwords
-from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies
+from .search_utils import PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
 from nltk.stem import PorterStemmer 
 
 CACHE_ROOT = os.path.dirname(__file__)
@@ -98,7 +97,7 @@ def bm25_idf_command(term: str) -> float:
     index.load()
     return index.get_bm25_idf(term)
 
-def bm25_tf_command(doc_id: int, term: str) -> float:
+def bm25_tf_command(doc_id: int, term: str, k1: float = BM25_K1) -> float:
     idx = InvertedIndex()
     idx.load()
 
