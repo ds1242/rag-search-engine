@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+from re import search
 
-from lib.keyword_search import build_command, search_command, tf_command
+from lib.keyword_search import build_command, search_command, tf_command, idf_command, tfidf_command
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -15,6 +16,13 @@ def main() -> None:
     search_parser = subparsers.add_parser("tf", help="Get a term frequency using a doc id and term")
     search_parser.add_argument("doc_id", type=int, help="Document ID to search for term frequency")
     search_parser.add_argument("term", type=str, help="Term to check frequency")
+
+    search_parser = subparsers.add_parser("idf", help="Get inverse document frequency of a term")
+    search_parser.add_argument("idf_term", help="Term to check idf value")
+
+    search_parser = subparsers.add_parser("tfidf", help="Get the TF-IDF score for a given a document id and term")
+    search_parser.add_argument("doc_id", type=int, help="Document ID to generate TI-IDF value")
+    search_parser.add_argument("term", type=str, help="Term needed to generate the TI-IDF value")
 
     args = parser.parse_args()
 
@@ -34,7 +42,12 @@ def main() -> None:
             print(f"Searching {args.doc_id} for {args.term}")
             count = tf_command(args.doc_id, args.term)
             print(f"{count}")
-
+        case "idf":
+            idf_val = idf_command(args.idf_term)
+            print(f"Inverse document frequency of '{args.idf_term}' : {idf_val:.2f}")
+        case "tfidf":
+            tfidf_val = tfidf_command(args.doc_id, args.term)
+            print(f"TF-IDF scoer of '{args.term}' in document '{args.doc_id}' : {tfidf_val:.2f}")
         case _:
             parser.print_help()
 
