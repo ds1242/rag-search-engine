@@ -220,9 +220,9 @@ class InvertedIndex:
 
     def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1, b=BM25_B):
         tf = self.get_tf(doc_id, term)
-        bm25_sat_val = (tf * (k1 + 1)) / (tf + k1)
-        
-        avg_length = __get_avg_doc_length()
-        length_norm = 1 - b + b * ()
+        avg_length = self.__get_avg_doc_length()
+        length_norm = 1 - b + b * (self.doc_lengths[doc_id] / avg_length)
+
+        bm25_sat_val = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return bm25_sat_val
 
