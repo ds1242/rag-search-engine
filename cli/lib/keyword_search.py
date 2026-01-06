@@ -81,6 +81,11 @@ def tf_command(doc_id, term) -> int:
     count = index.get_tf(doc_id, term)
     return count
 
+def idf_command(term) -> float:
+    index = InvertedIndex()
+    index.load()
+
+
 
 class InvertedIndex:
     def __init__(self):
