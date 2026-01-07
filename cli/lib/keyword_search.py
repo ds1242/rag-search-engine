@@ -250,10 +250,4 @@ class InvertedIndex:
                 score = self.bm25(doc, token)
                 scores[doc] += score
         
-        sorted_scores = {k : v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
-
-        sorted_scores_limited = {}
-        for key, value in sorted_scores.items():
-            sorted_scores_limited[key] = value
-
-        return sorted_scores_limited
+        return sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
