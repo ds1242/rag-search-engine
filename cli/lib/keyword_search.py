@@ -250,4 +250,14 @@ class InvertedIndex:
                 score = self.bm25(doc, token)
                 scores[doc] += score
         
-        return sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
+        sorted_scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
+        results = []
+        for doc_id, score in sorted_scores:
+            doc = self.docmap[doc_id]
+            doc['score'] = score
+            results.append(doc)
+
+        return results
+
+
+
