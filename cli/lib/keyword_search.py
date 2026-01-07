@@ -98,13 +98,21 @@ def bm25_idf_command(term: str) -> float:
     index.load()
     return index.get_bm25_idf(term)
 
-def bm25_tf_command(doc_id: int, term: str, k1: float = BM25_K1) -> float:
+def bm25_tf_command(doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B) -> float:
     idx = InvertedIndex()
     idx.load()
 
-    bm25_tf = idx.get_bm25_tf(doc_id, term)
+    bm25_tf = idx.get_bm25_tf(doc_id, term, k1, b)
 
     return bm25_tf
+
+def bm25_search_command(query: str, limit: int) -> list[int]:
+    idx = InvertedIndex()
+    idx.load()
+
+    scores = idx.bm25_search(query, limit)
+    return scores
+
 
 class InvertedIndex:
     def __init__(self):
@@ -225,4 +233,31 @@ class InvertedIndex:
 
         bm25_sat_val = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return bm25_sat_val
+
+    def bm25(self, doc_id: int, term: str) -> float:
+        bm25_tf = self.get_bm25_tf(doc_id, term)
+        bm25_idf = self.get_bm25_idf(term)
+
+        return bm25_tf * bm25_idf
+
+    def bm25_search(self, query: str, limit: int):
+        token_query = tokenize_text(query)
+        scores = {}
+
+        for doc in self.docmap:
+            scores[doc] = 0
+            for token in token_query:
+                score = self.bm25(doc, token)
+                scores[doc] += score
+        
+        sorted_scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
+        results = []
+        for doc_id, score in sorted_scores:
+            doc = self.docmap[doc_id]
+            doc['score'] = score
+            results.append(doc)
+
+        return results
+
+
 
