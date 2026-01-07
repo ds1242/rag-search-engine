@@ -226,3 +226,10 @@ class InvertedIndex:
         bm25_sat_val = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return bm25_sat_val
 
+    def bm25(self, doc_id: int, term: str) -> float:
+        bm25_tf = self.get_bm25_tf(doc_id, term)
+        bm25_idf = self.get_bm25_idf(term)
+
+        return bm25_tf * bm25_idf
+
+
