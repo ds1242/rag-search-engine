@@ -27,7 +27,7 @@ class SemanticSearch:
             movie_string = f"{doc['title']}: {doc['description']}"
             movie_info_strings.append(movie_string)
 
-        self.embeddings = self.model(movie_info_strings, show_progress_bar=True)
+        self.embeddings = self.model.encode(movie_info_strings, show_progress_bar=True)
         embeddings_path = os.path.join(CACHE_ROOT, "movie_embeddings.npy")
         np.save(embeddings_path, self.embeddings)
 
@@ -49,10 +49,10 @@ class SemanticSearch:
 
 def verify_embeddings():
     search_instance = SemanticSearch()
-    movies = load_movies()
-    search_instance.load_or_create_embeddings(movies)
-    print(f"Number of docs: {len(search_instance.documents)}")
-    print(f"Embeddings shape: {search_instance.embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
+    documents = load_movies()
+    embeddings = search_instance.load_or_create_embeddings(documents)
+    print(f"Number of docs:   {len(documents)}")
+    print(f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
 
 
 def verify_model():
