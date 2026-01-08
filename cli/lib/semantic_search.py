@@ -56,13 +56,21 @@ def verify_embeddings():
 
 
 def verify_model():
-    model = SemanticSearch()
-    print(f"Model Loaded: {model.model}")
-    print(f"Max sequence length: {model.model.max_seq_length}")
+    search_instance = SemanticSearch()
+    print(f"Model Loaded: {search_instance.model}")
+    print(f"Max sequence length: {search_instance.model.max_seq_length}")
 
 def embed_text(text):
-    model = SemanticSearch()
-    embedding = model.generate_embedding(text)
+    search_instance = SemanticSearch()
+    embedding = search_instance.generate_embedding(text)
     print(f"Text: {text}")
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Dimensions: {embedding.shape[0]}")
+
+def embed_query_text(query):
+    search_instance = SemanticSearch()
+    embedding = search_instance.generate_embedding(query)
+
+    print(f"Query: {query}")
+    print(f"First 5 dimensions: {embedding[:5]}")
+    print(f"Shape: {embedding.shape[0]}")
