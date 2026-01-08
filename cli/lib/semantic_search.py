@@ -98,12 +98,13 @@ def embed_query_text(query) -> None:
     print(f"First 5 dimensions: {embedding[:5]}")
     print(f"Shape: {embedding.shape[0]}")
 
-def search(query: str, limit: int = 5):
+def search(query: str, limit: int):
     search_instance = SemanticSearch()
     documents = load_movies()
     embeddings = search_instance.load_or_create_embeddings(documents)
     results = search_instance.search(query, limit)
     for i, res in enumerate(results, 1):
+        print(f"{i}. {res['title']} (score: {res['score']})\n{res['description']}")
     
 
 def cosine_similarity(vec1, vec2) -> float:

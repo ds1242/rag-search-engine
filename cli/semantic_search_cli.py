@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.semantic_search import embed_query_text, embed_text, verify_embeddings, verify_model
+from lib.semantic_search import embed_query_text, embed_text, search, verify_embeddings, verify_model
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -18,6 +18,10 @@ def main():
     embedquery_parser = subparsers.add_parser("embedquery", help="Embed the query")
     embedquery_parser.add_argument("query", type=str, help="Query to be embedded")
 
+    embed_search = subparsers.add_parser("search", help="")
+    embed_search.add_argument("query", type=str, help="Search query")
+    embed_search.add_argument("--limit", type=int, default=5, help="Set the limit of documents to return along with their scores")
+
     args = parser.parse_args()
 
     match args.command:
@@ -29,6 +33,8 @@ def main():
             verify_embeddings()
         case "embedquery":
             embed_query_text(args.query)
+        case "search":
+            search(args.query, args.limit)
         case _:
             parser.print_help()
 
