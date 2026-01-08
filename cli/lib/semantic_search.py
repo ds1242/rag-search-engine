@@ -41,10 +41,10 @@ class SemanticSearch:
         if os.path.isfile(os.path.join(CACHE_ROOT, "movie_embeddings.npy")):
             self.embeddings = np.load(os.path.join(CACHE_ROOT, "movie_embeddings.npy"))
 
-        if len(self.embeddings) == len(self.documents):
+        if self.embeddings is not None and len(self.embeddings) == len(self.documents):
             return self.embeddings
-        else:
-            return self.build_embeddings(documents)
+
+        return self.build_embeddings(documents)
 
 
 def verify_embeddings():
