@@ -5,10 +5,10 @@ class SemanticSearch:
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     def generate_embedding(self, text):
-        if text == "" or text = ' ':
+        if not text.strip():
             raise ValueError("text string is empty")
 
-        embedding = self.model.encode(list(text))
+        embedding = self.model.encode([text])
         return embedding[0]
 
 
@@ -23,5 +23,5 @@ def embed_text(text):
     model = SemanticSearch()
     embedding = model.generate_embedding(text)
     print(f"Text: {text}")
-    print(f"Frist 3 dimensions: {embedding[:3]}")
+    print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Dimensions: {embedding.shape[0]}")
