@@ -47,7 +47,7 @@ class SemanticSearch:
         return self.build_embeddings(documents)
     
     def search(self, query, limit):
-        if not self.embeddings or self.embeddings.size == 0:
+        if self.embeddings is None or self.embeddings.size == 0:
             raise ValueError("No embeddings lodaded. Call `load_or_create_embeddings` first.")
 
         query_embed = self.generate_embedding(query)
@@ -104,7 +104,7 @@ def search(query: str, limit: int):
     embeddings = search_instance.load_or_create_embeddings(documents)
     results = search_instance.search(query, limit)
     for i, res in enumerate(results, 1):
-        print(f"{i}. {res['title']} (score: {res['score']})\n{res['description']}")
+        print(f"{i}. {res['title']} (score: {res['score']:.4f})\n{res['description'][:100] + "..."}")
     
 
 def cosine_similarity(vec1, vec2) -> float:
