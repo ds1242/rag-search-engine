@@ -1,5 +1,5 @@
 from os.path import isfile
-from lib.search_utils import CACHE_ROOT
+from lib.search_utils import CACHE_ROOT, load_movies
 import numpy as np
 import os
 from sentence_transformers import SentenceTransformer
@@ -9,7 +9,7 @@ class SemanticSearch:
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         self.embeddings = None
         self.documents = None
-        self.document_map = []
+        self.document_map = {}
 
     def generate_embedding(self, text):
         if not text.strip():
@@ -36,13 +36,23 @@ class SemanticSearch:
     def load_or_create_embeddings(self, documents):
         self.documents = documents
 
-        movie_info_strings = []
         for doc in self.documents:
             self.document_map[doc['id']] = doc
-        if os.path.isfile(os.path.join(CACHE_ROOT), "movie_embeddings.npy"):
-                self.embeddings = np.load(os.path.join(CACHE_ROOT), "movie_embeddings.npy")
+        if os.path.isfile(os.path.join(CACHE_ROOT, "movie_embeddings.npy")):
+            self.embeddings = np.load(os.path.join(CACHE_ROOT, "movie_embeddings.npy"))
+
+        if len(self.embeddings) == len(self.documents):
+            return self.embeddings
+        else:
+            return self.build_embeddings(documents)
 
 
+def verify_embeddings():
+    search_instance = SemanticSearch()
+    movies = load_movies()
+    search_instance.load_or_create_embeddings(movies)
+    print(f"Number of docs: {len(search_instance.documents)}")
+    print(f"Embeddings shape: {search_instance.embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
 
 
 def verify_model():
