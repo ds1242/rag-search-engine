@@ -6,10 +6,9 @@ import math
 from collections import Counter, defaultdict
 
 from .word_utils import load_stopwords
-from .search_utils import BM25_B, PROJECT_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
+from .search_utils import BM25_B, CACHE_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
 from nltk.stem import PorterStemmer 
 
-CACHE_ROOT = os.path.dirname(__file__)
 
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
@@ -120,10 +119,10 @@ class InvertedIndex:
         self.docmap = {}
         self.term_frequencies = defaultdict(Counter)
         self.doc_lengths = {}
-        self.index_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "index.pkl")
-        self.docmap_path = os.path.join(os.path.join(PROJECT_ROOT,"cache"), "docmap.pkl")
-        self.tf_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "term_frequencies.pkl")
-        self.doc_lengths_path = os.path.join(os.path.join(PROJECT_ROOT, "cache"), "doc_lengths.pkl")
+        self.index_path = os.path.join(CACHE_ROOT, "index.pkl")
+        self.docmap_path = os.path.join(CACHE_ROOT, "docmap.pkl")
+        self.tf_path = os.path.join(CACHE_ROOT, "term_frequencies.pkl")
+        self.doc_lengths_path = os.path.join(CACHE_ROOT, "doc_lengths.pkl")
 
     def __add_document(self, doc_id, text) -> None:
         text_tokens = tokenize_text(text)
@@ -155,8 +154,7 @@ class InvertedIndex:
             self.docmap[doc_id] = movie
 
     def save(self) -> None:
-        cache_dir = os.path.join(PROJECT_ROOT, "cache")
-        os.makedirs(cache_dir, exist_ok=True)
+        os.makedirs(CACHE_ROOT, exist_ok=True)
         with open(self.index_path, 'wb') as file:
             pickle.dump(self.index, file)
         with open(self.docmap_path, 'wb') as f:

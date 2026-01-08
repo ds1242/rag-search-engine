@@ -1,8 +1,15 @@
+from os.path import isfile
+from lib.search_utils import CACHE_ROOT
+import numpy as np
+import os
 from sentence_transformers import SentenceTransformer
 
 class SemanticSearch:
     def __init__(self) -> None:
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        self.embeddings = None
+        self.documents = None
+        self.document_map = []
 
     def generate_embedding(self, text):
         if not text.strip():
@@ -10,6 +17,30 @@ class SemanticSearch:
 
         embedding = self.model.encode([text])
         return embedding[0]
+
+    def build_embeddings(self, documents):
+        self.documents = documents
+
+        movie_info_strings = []
+        for doc in self.documents:
+            self.document_map[doc['id']] = doc
+            movie_string = f"{doc['title']}: {doc['description']}"
+            movie_info_strings.append(movie_string)
+
+        self.embeddings = self.model(movie_info_strings, show_progress_bar=True)
+        embeddings_path = os.path.join(CACHE_ROOT, "movie_embeddings.npy")
+        np.save(embeddings_path, self.embeddings)
+
+        return self.embeddings
+
+    def load_or_create_embeddings(self, documents):
+        self.documents = documents
+
+        movie_info_strings = []
+        for doc in self.documents:
+            self.document_map[doc['id']] = doc
+        if os.path.isfile(os.path.join(CACHE_ROOT), "movie_embeddings.npy"):
+                self.embeddings = np.load(os.path.join(CACHE_ROOT), "movie_embeddings.npy")
 
 
 
