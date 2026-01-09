@@ -22,6 +22,10 @@ def main():
     embed_search.add_argument("query", type=str, help="Search query")
     embed_search.add_argument("--limit", type=int, default=5, help="Set the limit of documents to return along with their scores")
 
+    chunk_parser = subparsers.add_parser("chunk", help="Chunk a document to a max character size set by an optional limit, default 200 characters")
+    chunk_parser.add_argument("text", type=str, help="String to be chunked")
+    chunk_parser.add_argument("--chunk-size", type=int, default=200, help="Chunk size to break up the string into")
+
     args = parser.parse_args()
 
     match args.command:
