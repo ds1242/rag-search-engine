@@ -117,4 +117,16 @@ def cosine_similarity(vec1, vec2) -> float:
 
     return dot_product / (norm1 * norm2)
 
-
+def chunk(text: str, limit: int):
+    split_text = text.split()
+    chunked_text = []
+    curr_chunk = []
+    for word in split_text:
+        curr_chunk.append(word)
+        if len(curr_chunk) == limit:
+            chunked_text.append(" ".join(curr_chunk))
+            curr_chunk = []
+    chunked_text.append(" ".join(curr_chunk))
+    print(f"Chunking {len(text)} characters")
+    for i, chunk in enumerate(chunked_text, 1):
+        print(f"{i}. {chunk}")
