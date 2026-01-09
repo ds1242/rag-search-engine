@@ -1,5 +1,4 @@
-from os.path import isfile
-from lib.search_utils import CACHE_ROOT, load_movies
+from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, load_movies
 import numpy as np
 import os
 from sentence_transformers import SentenceTransformer
@@ -101,7 +100,7 @@ def embed_query_text(query) -> None:
 def search(query: str, limit: int):
     search_instance = SemanticSearch()
     documents = load_movies()
-    embeddings = search_instance.load_or_create_embeddings(documents)
+    search_instance.load_or_create_embeddings(documents)
     results = search_instance.search(query, limit)
     for i, res in enumerate(results, 1):
         print(f"{i}. {res['title']} (score: {res['score']:.4f})\n{res['description'][:100] + "..."}")
@@ -117,16 +116,21 @@ def cosine_similarity(vec1, vec2) -> float:
 
     return dot_product / (norm1 * norm2)
 
-def chunk(text: str, limit: int):
-    split_text = text.split()
-    chunked_text = []
-    curr_chunk = []
-    for word in split_text:
-        curr_chunk.append(word)
-        if len(curr_chunk) == limit:
-            chunked_text.append(" ".join(curr_chunk))
-            curr_chunk = []
-    chunked_text.append(" ".join(curr_chunk))
+def fixed_size_chunking(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE) -> list[str]:
+    words = text.split()
+    chunks = []
+
+    n_words = len(words)
+    i = 0
+    while i < n_words:
+        chunk_words = words[i : i + chunk_size]
+        chunks.append(" ".join(chunk_words))
+        i += chunk_size
+
+    return chunks
+
+def chunk_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE) -> None:
+    chunks = fixed_size_chunking(text, chunk_size)
     print(f"Chunking {len(text)} characters")
-    for i, chunk in enumerate(chunked_text, 1):
-        print(f"{i}. {chunk}")
+    for i, chunk in enumerate(chunks):
+        print(f"{i + 1}. {chunk}")
