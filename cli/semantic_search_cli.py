@@ -25,7 +25,7 @@ def main():
     chunk_parser = subparsers.add_parser("chunk", help="Split text into fixed-size chunks")
     chunk_parser.add_argument("text", type=str, help="String to be chunked")
     chunk_parser.add_argument("--chunk-size", type=int, default=200, help="Chunk size to break up the string into")
-    chunk_parser.add_argument("--overlap", type=int, help="Add overlap to ensure that context is preserved")
+    chunk_parser.add_argument("--overlap", type=int, default=0, help="Add overlap to ensure that context is preserved")
 
     args = parser.parse_args()
 
