@@ -11,5 +11,4 @@ wheels/
 
 data
 
-cache/*.pkl
-cache/*.npy
+cache/
