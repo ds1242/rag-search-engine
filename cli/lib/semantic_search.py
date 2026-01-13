@@ -129,7 +129,6 @@ class ChunkedSemanticSearch(SemanticSearch):
         return build_chunk_embeddings(documents)
 
 
-
 def verify_embeddings() -> None:
     search_instance = SemanticSearch()
     documents = load_movies()
@@ -219,3 +218,9 @@ def semantic_chunking(text: str, chunk_size: int = DEFAULT_SEMANTIC_CHUNK, overl
     print(f"Semantically chunking {len(text)} characters")
     for i, chunk in enumerate(chunks):
         print(f"{i + 1}. {chunk}")
+
+def embed_chunks() -> None:
+    movies = load_movies()
+    chunk_instance = ChunkedSemanticSearch()
+    chunk_instance.load_or_create_chunk_embeddings(movies)
+    print(f"Generated {len(chunk_instance.embeddings)} chunked embeddings")

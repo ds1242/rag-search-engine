@@ -32,6 +32,9 @@ def main():
     semantic_chunk_parser.add_argument("--max-chunk-size", type=int, default=4, help="Max chunk size with a default of 4")
     semantic_chunk_parser.add_argument("--overlap", type=int, default=0, help="Optional overlap to ensure additional context is preserved")
 
+    embed_chunks = subparsers.add_parser("embed_chunks", help="Chunk and embed documents")
+
+
     args = parser.parse_args()
 
     match args.command:
@@ -49,6 +52,8 @@ def main():
             chunk_text(args.text, args.chunk_size, args.overlap)
         case "semantic_chunk":
             semantic_chunking(args.text, args.max_chunk_size, args.overlap)
+        case "embed_chunks":
+            embed_chunks()
         case _:
             parser.print_help()
 
