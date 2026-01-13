@@ -1,6 +1,7 @@
-from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, load_movies
+from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, DEFAULT_SEMANTIC_CHUNK, load_movies
 import numpy as np
 import os
+import re
 from sentence_transformers import SentenceTransformer
 
 class SemanticSearch:
@@ -133,6 +134,13 @@ def fixed_size_chunking(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap
 
 def chunk_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_CHUNK_OVERLAP) -> None:
     chunks = fixed_size_chunking(text, chunk_size,overlap)
+    print(f"Chunking {len(text)} characters")
+    for i, chunk in enumerate(chunks):
+        print(f"{i + 1}. {chunk}")
+
+
+def semantic_chunking(text: str, chunk_size: int = DEFAULT_SEMANTIC_CHUNK, overlap: int = DEFAULT_CHUNK_OVERLAP) -> None:
+    chunks = re.split(r"(?<=[.!?])\s+", text, maxsplit=chunk_size) 
     print(f"Chunking {len(text)} characters")
     for i, chunk in enumerate(chunks):
         print(f"{i + 1}. {chunk}")
