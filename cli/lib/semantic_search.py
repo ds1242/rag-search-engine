@@ -2,11 +2,12 @@ from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERL
 import numpy as np
 import os
 import re
+import json
 from sentence_transformers import SentenceTransformer
 
 class SemanticSearch:
-    def __init__(self) -> None:
-        self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    def __init__(self, model_name = "all-MiniLM-L6-v2") -> None:
+        self.model = SentenceTransformer(f'sentence-transformers/{model_name}')
         self.embeddings = None
         self.documents = None
         self.document_map = {}
@@ -82,23 +83,23 @@ class ChunkedSemanticSearch(SemanticSearch):
             self.document_map[doc['id']] = doc
 
         all_chunks = []
-        chunk_metadata = list[dict]
+        chunk_metadata: list[dict] = []
 
         for doc in self.documents:
-            if len(doc['description']) == 0:
-                break
+            if doc['description'] == "":
+                continue
             
-            chunks = semantic_chunking(doc['description'], 4, 1)
-            for i, chunk in enumerate(chunks):
+            chunks = semantic_chunk_processing(doc['description'], 4, 1)
+            for key, chunk in enumerate(chunks):
                 all_chunks.append(chunk)
                 chunk_meta = {
                     "movie_idx": doc['id'],
-                    "chunk_idx": i,
+                    "chunk_idx": key,
                     "total_chunks": len(chunks)
                 }
                 chunk_metadata.append(chunk_meta)
         
-        self.embeddings = self.model.encode(chunk_metadata, show_progress_bar=True)
+        self.embeddings = self.model.encode(all_chunks, show_progress_bar=True)
         self.chunk_metadata = chunk_metadata
 
         embeddings_path = os.path.join(CACHE_ROOT, "chunk_embeddings.npy")
@@ -126,7 +127,7 @@ class ChunkedSemanticSearch(SemanticSearch):
 
             return self.embeddings
 
-        return build_chunk_embeddings(documents)
+        return self.build_chunk_embeddings(documents)
 
 
 def verify_embeddings() -> None:
