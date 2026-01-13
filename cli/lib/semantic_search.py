@@ -110,6 +110,24 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         return self.embeddings
 
+    def load_or_create_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        self.documents = documents
+
+        for doc in self.documents:
+            self.document_map[doc['id']] = doc
+        
+        chunk_metadata_path = os.path.join(CACHE_ROOT, "chunk_metadata.json")
+        embeddings_path = os.path.join(CACHE_ROOT, "chunk_embeddings.npy")
+        if os.path.isfile(embeddings_path) and os.path.isfile(chunk_metadata_path):
+            self.embeddings = np.load(os.path.join(CACHE_ROOT, "chunk_embeddings.npy"))
+
+            with open(chunk_metadata_path, "r") as f:
+                self.chunk_metadata = json.load(f)
+
+            return self.embeddings
+
+        return build_chunk_embeddings(documents)
+
 
 
 def verify_embeddings() -> None:
