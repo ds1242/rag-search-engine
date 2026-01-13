@@ -75,6 +75,31 @@ class ChunkedSemanticSearch(SemanticSearch):
         self.chunk_embeddings = None
         self.chunk_metadata = None
 
+    def build_chunk_embeddings(self, documents):
+        self.documents = documents
+
+        for doc in self.documents:
+            self.document_map[doc['id']] = doc
+
+        all_chunks = []
+        chunk_metadata = list[dict]
+
+        for doc in self.documents:
+            if len(doc['description']) == 0:
+                break
+            
+            chunks = semantic_chunking(doc['description'], 4, 1)
+            for i, chunk in enumerate(chunks):
+                all_chunks.append(chunk)
+                chunk_meta = {
+                    "movie_idx": doc['id'],
+                    "chunk_idx": i,
+                    "total_chunks": len(chunks)
+                }
+                chunk_metadata.append(chunk_meta)
+        
+        self.embeddings = self.model.encode(chunk_metadata, show_progress_bar=True)
+
 
 def verify_embeddings() -> None:
     search_instance = SemanticSearch()
