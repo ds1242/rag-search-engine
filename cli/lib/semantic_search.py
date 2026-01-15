@@ -99,7 +99,7 @@ class ChunkedSemanticSearch(SemanticSearch):
                 }
                 chunk_metadata.append(chunk_meta)
         
-        self.embeddings = self.model.encode(all_chunks, show_progress_bar=True)
+        self.chunk_embeddings = self.model.encode(all_chunks, show_progress_bar=True)
         self.chunk_metadata = chunk_metadata
 
         embeddings_path = os.path.join(CACHE_ROOT, "chunk_embeddings.npy")
@@ -109,7 +109,7 @@ class ChunkedSemanticSearch(SemanticSearch):
         with open(chunk_metadata_path, "w") as f:
            json.dump({"chunks": chunk_metadata, "total_chunks": len(all_chunks)}, f, indent=2)
 
-        return self.embeddings
+        return self.chunk_embeddings
 
     def load_or_create_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
         self.documents = documents
@@ -120,12 +120,12 @@ class ChunkedSemanticSearch(SemanticSearch):
         chunk_metadata_path = os.path.join(CACHE_ROOT, "chunk_metadata.json")
         embeddings_path = os.path.join(CACHE_ROOT, "chunk_embeddings.npy")
         if os.path.isfile(embeddings_path) and os.path.isfile(chunk_metadata_path):
-            self.embeddings = np.load(os.path.join(CACHE_ROOT, "chunk_embeddings.npy"))
+            self.chunk_embeddings = np.load(os.path.join(CACHE_ROOT, "chunk_embeddings.npy"))
 
             with open(chunk_metadata_path, "r") as f:
                 self.chunk_metadata = json.load(f)
 
-            return self.embeddings
+            return self.chunk_embeddings
 
         return self.build_chunk_embeddings(documents)
 
@@ -269,7 +269,7 @@ def embed_chunks() -> None:
     chunk_instance.load_or_create_chunk_embeddings(movies)
     print(f"Generated {len(chunk_instance.embeddings)} chunked embeddings")
 
-def search_chunked(text:str, limit: int):
+def search_chunked(text:str, limit: int) -> None:
     movies = load_movies()
     chunks_instance = ChunkedSemanticSearch()
     chunks_instance.load_or_create_chunk_embeddings(movies)
