@@ -133,9 +133,34 @@ class ChunkedSemanticSearch(SemanticSearch):
         query_embedding = self.generate_embedding(query)
         chunk_scores = []
 
-        for chunk_embed in self.embeddings:
-            similarity = cosine_similarity(chunk_embed, query_embedding)
+        for i, chunk_embed in enumerate(self.chunk_embeddings):
+            similarity_score = cosine_similarity(chunk_embed, query_embedding)
+            chunk_scores.append({
+                "chunk_idx": self.chunk_metadata[i]['chunk_idx'],
+                "movie_idx": self.chunk_metadata[i]['movie_idx'],
+                "score": similarity_score
+            })
 
+        movie_idx_score = {}
+        for score in chunk_scores:
+            movie_idx = score['movie_idx']
+            score_val = score['score']
+
+            if movie_idx not in movie_idx_score or score_val > movie_idx_score[movie_idx]:
+                movie_idx_score[movie_idx] = score
+
+        movie_idx_score = dict(sorted(movie_idx_score.items(), key=lambda item: item[1], reverse=True))
+        results = {}
+        count = 0
+
+        for movie in movie_idx_score:
+            if count >= limit:
+                break
+
+            doc = self.documents[movie['movie_idx']]
+
+
+        
 
 
 
