@@ -1,4 +1,4 @@
-from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, DEFAULT_SEMANTIC_CHUNK, load_movies
+from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, DEFAULT_SEMANTIC_CHUNK, SCORE_PRECISION, load_movies
 import numpy as np
 import os
 import re
@@ -129,7 +129,7 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         return self.build_chunk_embeddings(documents)
 
-    def search_chunks(self, query: str, limit: int = 10):
+    def search_chunks(self, query: str, limit: int = 10) -> list[dict]:
         query_embedding = self.generate_embedding(query)
         chunk_scores = []
 
@@ -150,15 +150,23 @@ class ChunkedSemanticSearch(SemanticSearch):
                 movie_idx_score[movie_idx] = score
 
         movie_idx_score = dict(sorted(movie_idx_score.items(), key=lambda item: item[1], reverse=True))
-        results = {}
+        results = []
         count = 0
 
-        for movie in movie_idx_score:
+        for index, score in movie_idx_score.items():
             if count >= limit:
                 break
 
-            doc = self.documents[movie['movie_idx']]
-
+            doc = self.documents[index]
+            results.append({
+                "id": doc['id'],
+                "title": doc['title'],
+                "document": doc['description'][:100],
+                "score": round(score, SCORE_PRECISION),
+                "metadata": {}
+            })
+            count += 1
+        return results
 
         
 
@@ -260,3 +268,15 @@ def embed_chunks() -> None:
     chunk_instance = ChunkedSemanticSearch()
     chunk_instance.load_or_create_chunk_embeddings(movies)
     print(f"Generated {len(chunk_instance.embeddings)} chunked embeddings")
+
+def search_chunked(text:str, limit: int):
+    movies = load_movies()
+    chunks_instance = ChunkedSemanticSearch()
+    chunks_instance.load_or_create_chunk_embeddings(movies)
+    results = chunks_instance.search_chunks(text, limit)
+    for i, result in enumerate(results):
+        print(f"\n {i}. {result['title']} (score: {result['score']:4f})")
+        print(f"    {result['description']}")
+
+
+    

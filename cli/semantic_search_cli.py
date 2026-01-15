@@ -34,6 +34,10 @@ def main():
 
     embed_chunks_parser = subparsers.add_parser("embed_chunks", help="Chunk and embed documents")
 
+    search_chunk_parser = subparsers.add_parser("search_chunked", help="Used to search embedded chunks")
+    search_chunk_parser.add_argument("query", type=str, help="Query string to search the chunks")
+    search_chunk_parser.add_argument("--limit", type=int, default=10, help="Limit the results with an optional parameted, default is 10")
+
 
     args = parser.parse_args()
 

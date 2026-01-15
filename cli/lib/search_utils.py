@@ -15,6 +15,8 @@ DEFAULT_CHUNK_OVERLAP = 0
 
 DEFAULT_SEMANTIC_CHUNK = 4
 
+SCORE_PRECISION = 3
+
 def load_movies() -> list[dict]:
     with open(DATA_PATH, "r") as f:
         data = json.load(f)
