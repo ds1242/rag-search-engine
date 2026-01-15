@@ -59,7 +59,7 @@ def main():
         case "embed_chunks":
             embed_chunks()
         case "search_chunked":
-            search_chunked()
+            search_chunked(args.query, args.limit)
         case _:
             parser.print_help()
 
