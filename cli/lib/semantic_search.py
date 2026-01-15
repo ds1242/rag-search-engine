@@ -103,7 +103,7 @@ class ChunkedSemanticSearch(SemanticSearch):
         self.chunk_metadata = chunk_metadata
 
         embeddings_path = os.path.join(CACHE_ROOT, "chunk_embeddings.npy")
-        np.save(embeddings_path, self.embeddings)
+        np.save(embeddings_path, self.chunk_embeddings)
 
         chunk_metadata_path = os.path.join(CACHE_ROOT, "chunk_metadata.json")
         with open(chunk_metadata_path, "w") as f:
