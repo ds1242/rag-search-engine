@@ -147,7 +147,7 @@ class ChunkedSemanticSearch(SemanticSearch):
             score_val = score['score']
 
             if movie_idx not in movie_idx_score or score_val > movie_idx_score[movie_idx]:
-                movie_idx_score[movie_idx] = score
+                movie_idx_score[movie_idx] = score_val
 
         movie_idx_score = dict(sorted(movie_idx_score.items(), key=lambda item: item[1], reverse=True))
         results = []
