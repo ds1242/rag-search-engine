@@ -123,7 +123,8 @@ class ChunkedSemanticSearch(SemanticSearch):
             self.chunk_embeddings = np.load(os.path.join(CACHE_ROOT, "chunk_embeddings.npy"))
 
             with open(chunk_metadata_path, "r") as f:
-                self.chunk_metadata = json.load(f)
+                loaded_data = json.load(f)
+                self.chunk_metadata = loaded_data['chunks']
 
             return self.chunk_embeddings
 
@@ -134,7 +135,7 @@ class ChunkedSemanticSearch(SemanticSearch):
         chunk_scores = []
 
         for i, chunk_embed in enumerate(self.chunk_embeddings):
-            similarity_score = cosine_similarity(chunk_embed, query_embedding)
+            similarity_score = cosine_similarity(query_embedding, chunk_embed)
             chunk_scores.append({
                 "chunk_idx": self.chunk_metadata[i]['chunk_idx'],
                 "movie_idx": self.chunk_metadata[i]['movie_idx'],
@@ -157,7 +158,7 @@ class ChunkedSemanticSearch(SemanticSearch):
             if count >= limit:
                 break
 
-            doc = self.documents[index]
+            doc = self.document_map[index]
             results.append({
                 "id": doc['id'],
                 "title": doc['title'],
@@ -275,8 +276,5 @@ def search_chunked(text:str, limit: int) -> None:
     chunks_instance.load_or_create_chunk_embeddings(movies)
     results = chunks_instance.search_chunks(text, limit)
     for i, result in enumerate(results):
-        print(f"\n {i}. {result['title']} (score: {result['score']:4f})")
-        print(f"    {result['description']}")
-
-
-    
+        print(f"\n {i + 1}. {result['title']} (score: {result['score']:4f})")
+        print(f"    {result['document']}")
