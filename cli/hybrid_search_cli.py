@@ -59,6 +59,8 @@ def main() -> None:
                     )
                 print(f"   {res['document'][:100]}...")
                 print()
+        case "rrf-search":
+            results = rrf_search_command(args.query, args.k, args.limit)
         case _:
             parser.print_help()
 
