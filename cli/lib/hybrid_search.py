@@ -136,3 +136,7 @@ def weighted_search_command(
         "alpha": alpha,
         "results": results,
     }
+
+
+def rrf_search_command(query: str, k: int, limit: int):
+    pass
