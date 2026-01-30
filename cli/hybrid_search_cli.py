@@ -22,7 +22,7 @@ def main() -> None:
             for score in normalized_scores:
                 print(f"* {score:.4f}")
         case "weighted-search":
-            scores = weighted_search(args.query, args.alpha, args.limit)
+            weighted_search(args.query, args.alpha, args.limit)
         case _:
             parser.print_help()
 
