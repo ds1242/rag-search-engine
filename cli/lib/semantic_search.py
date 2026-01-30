@@ -243,12 +243,18 @@ def chunk_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = D
         print(f"{i + 1}. {chunk}")
 
 def semantic_chunk_processing(text: str, chunk_size: int = DEFAULT_SEMANTIC_CHUNK, overlap: int = DEFAULT_CHUNK_OVERLAP) -> list[str]:
+    print(text)
     output = []
     text = text.strip()
     if len(text) == 0:
         return output
 
+
     chunks = re.split(r"(?<=[.!?])\s+", text) 
+    
+    if len(chunks) == 1 and not chunks[0].endswith(('.', '!', '?')):
+        print(chunks)
+
     i = 0
     n_chunks = len(chunks)
 
@@ -256,7 +262,10 @@ def semantic_chunk_processing(text: str, chunk_size: int = DEFAULT_SEMANTIC_CHUN
         sentence_chunk = chunks[i : i + chunk_size]
         if output and len(sentence_chunk) <= overlap:
             break
-        output.append(" ".join(sentence_chunk))
+        sentence_chunk = " ".join(sentence_chunk)
+        print(sentence_chunk.strip())
+        if len(sentence_chunk.strip()) > 0:
+            output.append(sentence_chunk.strip())
         i += chunk_size - overlap
 
     return output
