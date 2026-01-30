@@ -28,6 +28,11 @@ def main() -> None:
         "--limit", type=int, default=5, help="Number of results to return (default=5)"
     )
 
+    rrf_parser = subparsers.add_parser("rrf-search", help="search using rrf to obtain better results")
+    rrf_parser.add_argument("query", type=str, help="query string to search")
+    rrf_parser.add_argument("--k", type=int, help="optional k value to tune search results")
+    rrf_parser.add_argument("--limit", type=int, default=5, help="optional limit value to adjust returned results, default = 5")
+
     args = parser.parse_args()
 
     match args.command:
