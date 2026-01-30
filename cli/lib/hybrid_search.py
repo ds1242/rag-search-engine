@@ -1,7 +1,7 @@
 import os
 from .keyword_search import InvertedIndex
 from .semantic_search import ChunkedSemanticSearch
-from lib.search_utils import format_search_result, load_movies
+from lib.search_utils import format_search_result, load_movies, DEFAULT_ALPHA
 
 class HybridSearch:
     def __init__(self, documents):
@@ -66,7 +66,7 @@ def normalize_score(scores: list[float]) -> list[float]:
 def hybrid_score(bm25score, semantic_score, alpha=0.5) -> float:
     return alpha * bm25score + (1 - alpha) * semantic_score
 
-def combine_search_results(bm25_results: list[dict], semantic_results: list[dict], alpha: float = 0.5) -> list[dict]:
+def combine_search_results(bm25_results: list[dict], semantic_results: list[dict], alpha: float = DEFAULT_ALPHA) -> list[dict]:
     bm25_normalized = normalize_search_results(bm25_results)
     semantic_normalized = normalize_search_results(semantic_results)
 
@@ -111,7 +111,7 @@ def combine_search_results(bm25_results: list[dict], semantic_results: list[dict
     return sorted(hybrid_results, key=lambda x: x['score'], reverse=True)
 
     
-def weighted_search(query: str, alpha: float, limit: int):
+def weighted_search_command(query: str, alpha: float, limit: int):
     movies = load_movies()
     searcher = HybridSearch(movies)
 

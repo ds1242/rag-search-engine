@@ -6,7 +6,7 @@ import math
 from collections import Counter, defaultdict
 
 from .word_utils import load_stopwords
-from .search_utils import BM25_B, CACHE_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
+from .search_utils import BM25_B, CACHE_ROOT, DEFAULT_SEARCH_LIMIT, format_search_result, load_movies, BM25_K1
 from nltk.stem import PorterStemmer 
 
 
@@ -243,17 +243,22 @@ class InvertedIndex:
         scores = {}
 
         for doc in self.docmap:
-            scores[doc] = 0
+            scores[doc] = 0.0
             for token in token_query:
                 score = self.bm25(doc, token)
                 scores[doc] += score
         
         sorted_scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
         results = []
-        for doc_id, score in sorted_scores:
+        for doc_id, score in sorted_scores[:limit]:
             doc = self.docmap[doc_id]
-            doc['score'] = score
-            results.append(doc)
+            formatted_result = format_search_result(
+                doc_id=doc["id"],
+                title=doc["title"],
+                document=doc["description"],
+                score=score,
+            )
+            results.append(formatted_result)
 
         return results
 

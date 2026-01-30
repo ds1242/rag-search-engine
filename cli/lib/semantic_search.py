@@ -1,4 +1,4 @@
-from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, DEFAULT_SEMANTIC_CHUNK, SCORE_PRECISION, load_movies
+from lib.search_utils import CACHE_ROOT, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, DEFAULT_SEMANTIC_CHUNK, SCORE_PRECISION, load_movies, format_search_result
 import numpy as np
 import os
 import re
@@ -159,14 +159,14 @@ class ChunkedSemanticSearch(SemanticSearch):
                 break
 
             doc = self.document_map[index]
-            results.append({
-                "id": doc['id'],
-                "title": doc['title'],
-                "document": doc['description'][:100],
-                "score": round(score, SCORE_PRECISION),
-                "metadata": {}
-            })
-            count += 1
+            results.append(
+                    format_search_result(
+                        doc_id=doc["id"],
+                        title=doc["title"],
+                        document=doc["description"][:100],
+                        score=score,
+                )
+            )
         return results
 
         

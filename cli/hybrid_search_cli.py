@@ -1,6 +1,6 @@
 import argparse
 
-from lib.hybrid_search import normalize_score, weighted_search
+from lib.hybrid_search import normalize_score, weighted_search_command
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -22,7 +22,17 @@ def main() -> None:
             for score in normalized_scores:
                 print(f"* {score:.4f}")
         case "weighted-search":
-            weighted_search(args.query, args.alpha, args.limit)
+            result = weighted_search_command(args.query, args.alpha, args.limit)
+            print(f"Weighed Hybrid Search Results for '{result['query']}' (alpha={result['alpha']}):")
+            print(f"  Alpha {result['alpha']}: {int(result['alpha'] * 100)}% Keyword, {int((1 - result['alpha']) * 100)}% Semantic")
+            for i, res in enumerate(result['results'], 1):
+                print(f"{i}. {res['title']}")
+                print(f"    Hybrid Score: {res.get('score', 0):.3f}")
+                metadata = res.get("metadata", {})
+                if "bm25_score" in metadata and "semantic_score" in metadata:
+                    print(f"    BM25: {metadata['bm25_score']:.3f}, Semantic: {metadata['semantic_score']:.3f}")
+                print(f"    {res['document'][:100]}...")
+                print()
         case _:
             parser.print_help()
 

@@ -3,6 +3,7 @@ import os
 from typing import Any
 
 DEFAULT_SEARCH_LIMIT = 5
+DEFAULT_ALPHA = 0.5
 
 BM25_K1 = 1.5
 BM25_B = 0.75
@@ -24,9 +25,7 @@ def load_movies() -> list[dict]:
     return data["movies"]
 
 
-def format_search_result(
-    doc_id: str, title: str, document: str, score: float, **metadata: Any
-) -> dict[str, Any]:
+def format_search_result(doc_id: str, title: str, document: str, score: float, **metadata: Any) -> dict[str, Any]:
     """Create standardized search result
 
     Args:
