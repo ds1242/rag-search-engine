@@ -1,52 +1,183 @@
-from os.path import isfile
-import string
+import math
 import os
 import pickle
-import math
+import string
 from collections import Counter, defaultdict
 
-from .word_utils import load_stopwords
-from .search_utils import BM25_B, CACHE_ROOT, DEFAULT_SEARCH_LIMIT, load_movies, BM25_K1
-from nltk.stem import PorterStemmer 
+from nltk.stem import PorterStemmer
 
+from .search_utils import (
+    BM25_B,
+    BM25_K1,
+    CACHE_DIR,
+    DEFAULT_SEARCH_LIMIT,
+    format_search_result,
+    load_movies,
+    load_stopwords,
+)
+
+
+class InvertedIndex:
+    def __init__(self) -> None:
+        self.index = defaultdict(set)
+        self.docmap: dict[int, dict] = {}
+        self.index_path = os.path.join(CACHE_DIR, "index.pkl")
+        self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
+        self.tf_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
+        self.doc_lengths_path = os.path.join(CACHE_DIR, "doc_lengths.pkl")
+        self.term_frequencies = defaultdict(Counter)
+        self.doc_lengths = {}
+
+    def build(self) -> None:
+        movies = load_movies()
+        for m in movies:
+            doc_id = m["id"]
+            doc_description = f"{m['title']} {m['description']}"
+            self.docmap[doc_id] = m
+            self.__add_document(doc_id, doc_description)
+
+    def save(self) -> None:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(self.index_path, "wb") as f:
+            pickle.dump(self.index, f)
+        with open(self.docmap_path, "wb") as f:
+            pickle.dump(self.docmap, f)
+        with open(self.tf_path, "wb") as f:
+            pickle.dump(self.term_frequencies, f)
+        with open(self.doc_lengths_path, "wb") as f:
+            pickle.dump(self.doc_lengths, f)
+
+    def load(self) -> None:
+        with open(self.index_path, "rb") as f:
+            self.index = pickle.load(f)
+        with open(self.docmap_path, "rb") as f:
+            self.docmap = pickle.load(f)
+        with open(self.tf_path, "rb") as f:
+            self.term_frequencies = pickle.load(f)
+        with open(self.doc_lengths_path, "rb") as f:
+            self.doc_lengths = pickle.load(f)
+
+    def get_documents(self, term: str) -> list[int]:
+        doc_ids = self.index.get(term, set())
+        return sorted(list(doc_ids))
+
+    def __add_document(self, doc_id: int, text: str) -> None:
+        tokens = tokenize_text(text)
+        for token in set(tokens):
+            self.index[token].add(doc_id)
+        self.term_frequencies[doc_id].update(tokens)
+        self.doc_lengths[doc_id] = len(tokens)
+
+    def get_tf(self, doc_id: int, term: str) -> int:
+        tokens = tokenize_text(term)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        return self.term_frequencies[doc_id][token]
+
+    def get_idf(self, term: str) -> float:
+        tokens = tokenize_text(term)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        return math.log((doc_count + 1) / (term_doc_count + 1))
+
+    def get_bm25_idf(self, term: str) -> float:
+        tokens = tokenize_text(term)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
+
+    def get_bm25_tf(
+        self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
+    ) -> float:
+        tf = self.get_tf(doc_id, term)
+        doc_length = self.doc_lengths.get(doc_id, 0)
+        avg_doc_length = self.__get_avg_doc_length()
+        if avg_doc_length > 0:
+            length_norm = 1 - b + b * (doc_length / avg_doc_length)
+        else:
+            length_norm = 1
+        return (tf * (k1 + 1)) / (tf + k1 * length_norm)
+
+    def get_tf_idf(self, doc_id: int, term: str) -> float:
+        tf = self.get_tf(doc_id, term)
+        idf = self.get_idf(term)
+        return tf * idf
+
+    def __get_avg_doc_length(self) -> float:
+        if not self.doc_lengths or len(self.doc_lengths) == 0:
+            return 0.0
+        total_length = 0
+        for length in self.doc_lengths.values():
+            total_length += length
+        return total_length / len(self.doc_lengths)
+
+    def bm25(self, doc_id: int, term: str) -> float:
+        tf_component = self.get_bm25_tf(doc_id, term)
+        idf_component = self.get_bm25_idf(term)
+        return tf_component * idf_component
+
+    def bm25_search(self, query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
+        query_tokens = tokenize_text(query)
+
+        scores = {}
+        for doc_id in self.docmap:
+            score = 0.0
+            for token in query_tokens:
+                score += self.bm25(doc_id, token)
+            scores[doc_id] = score
+
+        sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+        results = []
+        for doc_id, score in sorted_docs[:limit]:
+            doc = self.docmap[doc_id]
+            formatted_result = format_search_result(
+                doc_id=doc["id"],
+                title=doc["title"],
+                document=doc["description"],
+                score=score,
+            )
+            results.append(formatted_result)
+
+        return results
+
+
+def build_command() -> None:
+    idx = InvertedIndex()
+    idx.build()
+    idx.save()
 
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
-    index = InvertedIndex()
-    try:
-        index.load()
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-        return []
-    
+    idx = InvertedIndex()
+    idx.load()
     query_tokens = tokenize_text(query)
     seen, results = set(), []
-    for token in query_tokens:
-        matching_ids = index.get_documents(token)
-        for id in matching_ids:
-            if id in seen:
+    for query_token in query_tokens:
+        matching_doc_ids = idx.get_documents(query_token)
+        for doc_id in matching_doc_ids:
+            if doc_id in seen:
                 continue
-            seen.add(id)
-            results.append(index.docmap[id])
+            seen.add(doc_id)
+            doc = idx.docmap[doc_id]
+            results.append(doc)
             if len(results) >= limit:
-                break
+                return results
 
     return results
 
-def has_matching_tokens(query_tokens: list[str], title_tokens: list[str]) -> bool:
-    for query_token in query_tokens:
-        for title_token in title_tokens:
-            if query_token in title_token:
-                return True
-    return False
 
 def preprocess_text(text: str) -> str:
     text = text.lower()
-
-    translator = str.maketrans('', '', string.punctuation)
-    text = text.translate(translator)
-
-    return text 
+    text = text.translate(str.maketrans("", "", string.punctuation))
+    return text
 
 
 def tokenize_text(text: str) -> list[str]:
@@ -56,206 +187,51 @@ def tokenize_text(text: str) -> list[str]:
     for token in tokens:
         if token:
             valid_tokens.append(token)
-
-    stopwords = load_stopwords()
-    for token in list(valid_tokens):
-        if token in stopwords:
-            valid_tokens.remove(token)
-
+    stop_words = load_stopwords()
+    filtered_words = []
+    for word in valid_tokens:
+        if word not in stop_words:
+            filtered_words.append(word)
     stemmer = PorterStemmer()
     stemmed_words = []
-
-    for token in valid_tokens:
-        stemmed_word = stemmer.stem(token)
-        stemmed_words.append(stemmed_word)
-
+    for word in filtered_words:
+        stemmed_words.append(stemmer.stem(word))
     return stemmed_words
 
-def build_command() -> None:
-    index = InvertedIndex()
-    index.build()
-    index.save()
 
 def tf_command(doc_id: int, term: str) -> int:
-    index = InvertedIndex()
-    index.load()
-    count = index.get_tf(doc_id, term)
-    return count
+    idx = InvertedIndex()
+    idx.load()
+    return idx.get_tf(doc_id, term)
+
+
+def bm25_tf_command(
+    doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
+) -> float:
+    idx = InvertedIndex()
+    idx.load()
+    return idx.get_bm25_tf(doc_id, term, k1, b)
+
 
 def idf_command(term: str) -> float:
-    index = InvertedIndex()
-    index.load()
-    return index.get_idf(term)
+    idx = InvertedIndex()
+    idx.load()
+    return idx.get_idf(term)
 
-def tfidf_command(doc_id: int, term: str) -> float:
-    index = InvertedIndex()
-    index.load()
-    return index.get_tfidf(doc_id, term)
 
 def bm25_idf_command(term: str) -> float:
-    index = InvertedIndex()
-    index.load()
-    return index.get_bm25_idf(term)
-
-def bm25_tf_command(doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B) -> float:
     idx = InvertedIndex()
     idx.load()
+    return idx.get_bm25_idf(term)
 
-    bm25_tf = idx.get_bm25_tf(doc_id, term, k1, b)
 
-    return bm25_tf
-
-def bm25_search_command(query: str, limit: int) -> list[int]:
+def tfidf_command(doc_id: int, term: str) -> float:
     idx = InvertedIndex()
     idx.load()
-
-    scores = idx.bm25_search(query, limit)
-    return scores
+    return idx.get_tf_idf(doc_id, term)
 
 
-class InvertedIndex:
-    def __init__(self):
-        self.index = defaultdict(set)
-        self.docmap = {}
-        self.term_frequencies = defaultdict(Counter)
-        self.doc_lengths = {}
-        self.index_path = os.path.join(CACHE_ROOT, "index.pkl")
-        self.docmap_path = os.path.join(CACHE_ROOT, "docmap.pkl")
-        self.tf_path = os.path.join(CACHE_ROOT, "term_frequencies.pkl")
-        self.doc_lengths_path = os.path.join(CACHE_ROOT, "doc_lengths.pkl")
-
-    def __add_document(self, doc_id, text) -> None:
-        text_tokens = tokenize_text(text)
-        self.doc_lengths[doc_id] = len(text_tokens)
-        unique_tokens = set(text_tokens)
-        for token in unique_tokens:
-            self.index[token].add(doc_id)
-        self.term_frequencies[doc_id].update(text_tokens)            
-
-    def __get_avg_doc_length(self) -> float:
-        if len(self.doc_lengths) == 0:
-            return 0.0
-
-        doc_total = 0
-        for _, value in self.doc_lengths.items():
-            doc_total += value 
-
-        return doc_total / len(self.doc_lengths)
-
-    def get_documents(self, term: str) -> list[int]:
-        documents = self.index.get(term, set())
-        return sorted(list(documents))
-
-    def build(self) -> None:
-        movies = load_movies()
-        for movie in movies:
-            doc_id = movie['id']
-            self.__add_document(doc_id, f"{movie['title']} {movie['description']}")
-            self.docmap[doc_id] = movie
-
-    def save(self) -> None:
-        os.makedirs(CACHE_ROOT, exist_ok=True)
-        with open(self.index_path, 'wb') as file:
-            pickle.dump(self.index, file)
-        with open(self.docmap_path, 'wb') as f:
-            pickle.dump(self.docmap, f)
-        with open(self.tf_path, 'wb') as f:
-            pickle.dump(self.term_frequencies, f)
-        with open(self.doc_lengths_path, 'wb') as f:
-            pickle.dump(self.doc_lengths, f)
-
-    def load(self) -> None:
-        if os.path.isfile(self.index_path):
-            with open(self.index_path, "rb") as f:
-                self.index = pickle.load(f)
-        else:
-            raise Exception("file does not exist")
-
-        if os.path.isfile(self.docmap_path):
-            with open(self.docmap_path, "rb") as f:
-                self.docmap = pickle.load(f)
-        else:
-            raise Exception("file does not exist")
-
-        if os.path.isfile(self.tf_path):
-            with open(self.tf_path, "rb") as f:
-                self.term_frequencies = pickle.load(f)
-        else:
-            raise Exception("file does not exist")
-
-        if os.path.isfile(self.doc_lengths_path):
-            with open(self.doc_lengths_path, "rb") as f:
-                self.doc_lengths = pickle.load(f)
-        else:
-            raise Exception("file does not exist")
-
-    def get_tf(self, doc_id: int, term: str) -> int:
-        token_term = tokenize_text(term)
-        if len(token_term) != 1:
-            raise ValueError('too many terms')
-        
-        token = token_term[0]
-        return self.term_frequencies[doc_id].get(token, 0)
-
-    def get_idf(self, term: str) -> float:
-        token_term = tokenize_text(term)
-        if len(token_term) != 1:
-            raise ValueError("term must be a single token")
-
-        token = token_term[0]
-        matched_count = len(self.index[token]) 
-        total_doc_count = len(self.docmap)
-        return math.log((total_doc_count + 1) / (matched_count + 1))
-
-    def get_tfidf(self, doc_id: int, term: str) -> float:
-        idf_value = self.get_idf(term)
-        tf_value = self.get_tf(doc_id, term)
-
-        return tf_value * idf_value
-
-    def get_bm25_idf(self, term: str) -> float:
-        token_term = tokenize_text(term)
-        if len(token_term) != 1:
-            raise ValueError("to many terms")
-
-        token = token_term[0]
-        total_docs_count = len(self.docmap)
-        matched_doc_count = len(self.index[token])
-
-        return math.log((total_docs_count - matched_doc_count + 0.5) / (matched_doc_count + 0.5) + 1)
-
-    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1, b=BM25_B):
-        tf = self.get_tf(doc_id, term)
-        avg_length = self.__get_avg_doc_length()
-        length_norm = 1 - b + b * (self.doc_lengths[doc_id] / avg_length)
-
-        bm25_sat_val = (tf * (k1 + 1)) / (tf + k1 * length_norm)
-        return bm25_sat_val
-
-    def bm25(self, doc_id: int, term: str) -> float:
-        bm25_tf = self.get_bm25_tf(doc_id, term)
-        bm25_idf = self.get_bm25_idf(term)
-
-        return bm25_tf * bm25_idf
-
-    def bm25_search(self, query: str, limit: int):
-        token_query = tokenize_text(query)
-        scores = {}
-
-        for doc in self.docmap:
-            scores[doc] = 0
-            for token in token_query:
-                score = self.bm25(doc, token)
-                scores[doc] += score
-        
-        sorted_scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
-        results = []
-        for doc_id, score in sorted_scores:
-            doc = self.docmap[doc_id]
-            doc['score'] = score
-            results.append(doc)
-
-        return results
-
-
-
+def bm25search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
+    idx = InvertedIndex()
+    idx.load()
+    return idx.bm25_search(query, limit)
