@@ -42,5 +42,8 @@ def normalize_score(scores: list[float]) -> list[float]:
 
     return res
 
+def hybrid_score(bm25score, semantic_score, alpha=0.5):
+    return alpha * bm25score + (1 - alpha) * semantic_score
+
     
     

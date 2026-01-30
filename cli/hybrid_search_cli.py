@@ -9,6 +9,11 @@ def main() -> None:
     normalize_parser = subparser.add_parser("normalize", help="command that tests normalizing scores")
     normalize_parser.add_argument("scores", type=float, nargs="+", help="the list of scores being normalized")
 
+    weighted_search_parser = subparser.add_parser("weighted-search", help="conduct a weighted search using optional commands --alpha an --limit")
+    weighted_search_parser.add_argument("query", type=str, help="the query provided to be searched")
+    weighted_search_parser.add_argument("--alpha", type=float, default=0.5, help="The alpha value to be added which can adjust how the score is calculated, default = 0.5")
+    weighted_search_parser.add_argument("--limit", type=int, default=5, help="Limit how many results returned, default = 5")
+
     args = parser.parse_args()
 
     match args.command:
