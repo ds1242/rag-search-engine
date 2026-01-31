@@ -33,7 +33,22 @@ class HybridSearch:
         return combined[:limit]
 
     def rrf_search(self, query: str, k: int, limit: int = 10) -> list[dict]:
-        raise NotImplementedError("RRF hybrid search is not implemented yet.")
+        bm25_results = self._bm25_search(query, limit * 500)
+        semantic_results = self.semantic_search.search_chunks(query, limit * 500)
+
+
+def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict]):
+    rrf_scores = {}
+
+    for i, result in enumerate(bm25_results):
+        doc_id = result['id']
+        if doc_id not in rrf_scores:
+            rrf_scores[doc_id] = {
+                "document": result[doc_id],
+                "bm25_rank": i + 1,
+                "semantic_rank": 0.0,
+                "rrf_rank": 0.0,
+            }
 
 
 def normalize_scores(scores: list[float]) -> list[float]:
@@ -140,3 +155,6 @@ def weighted_search_command(
 
 def rrf_search_command(query: str, k: int, limit: int):
     pass
+
+def rrf_score(rank, k=60):
+    return 1 / (k + rank)
