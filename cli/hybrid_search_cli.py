@@ -64,7 +64,7 @@ def main() -> None:
             print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
             for i, res in enumerate(results["results"], 1):
                 print(f"{i}. {res['title']}")
-                print(f"    RRF Score: {res['score']}")
+                print(f"    RRF Score: {res['score']:.3f}")
                 metadata = res.get("metadata", {})
                 if "bm25_rank" in metadata and "semantic_rank" in metadata:
                     print(f"    BM25 Rank: {metadata['bm25_rank']}, Semantic Rank {metadata['semantic_rank']}")

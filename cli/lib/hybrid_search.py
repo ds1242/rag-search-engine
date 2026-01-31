@@ -41,49 +41,52 @@ class HybridSearch:
         return combined[:limit]
 
 
-def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict], k):
+def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict], k) -> list[dict]:
     rrf_scores = {}
 
-    for i, result in enumerate(bm25_results):
+    for i, result in enumerate(bm25_results, start=1):
         doc_id = result['id']
         if doc_id not in rrf_scores:
             rrf_scores[doc_id] = {
                 "title": result['title'],
                 "document": result['document'],
-                "bm25_rank": i + 1,
-                "semantic_rank": 0,
-                "rrf_rank": 0,
+                "bm25_rank": None,
+                "semantic_rank": None,
+                "rrf_score": 0.0,
             }
-        else:
-            rrf_scores[doc_id]['bm25_rank'] = i + 1
+        if rrf_scores[doc_id]["bm25_rank"] is None:
+            rrf_scores[doc_id]['bm25_rank'] = i
+            rrf_scores[doc_id]['rrf_score'] += rrf_score(i, k)
 
-    for i, result in enumerate(semantic_results):
+    for i, result in enumerate(semantic_results, start=1):
         doc_id = result['id']
         if doc_id not in rrf_scores:
             rrf_scores[doc_id] = {
                 "title": result['title'],
                 "document": result['document'],
-                "bm25_rank": 0,
-                "semantic_rank": i + 1,
-                "rrf_rank": 0,
+                "bm25_rank": None,
+                "semantic_rank": None,
+                "rrf_score": 0.0,
             }
-        else:
-            rrf_scores[doc_id]['semantic_rank'] = i + 1
+        if rrf_scores[doc_id]['semantic_rank'] is None:
+            rrf_scores[doc_id]['semantic_rank'] = i
+            rrf_scores[doc_id]['rrf_score'] += rrf_score(i, k)
 
+    sorted_results = sorted(rrf_scores.items(), key=lambda x: x[1]["rrf_score"], reverse=True)
     rrf_results = []
-    for doc_id, data in rrf_scores.items():
-        score_value = rrf_score(data['bm25_rank'] + data['semantic_rank'], k)
+    for doc_id, data in sorted_results:
         result = format_search_result(
             doc_id=doc_id,
             title=data["title"],
             document=data["document"],
-            score=score_value,
+            score=data['rrf_score'],
+            rrf_score=data['rrf_score'],
             bm25_rank=data["bm25_rank"],
             semantic_rank=data["semantic_rank"],
         )
         rrf_results.append(result)
 
-    return sorted(rrf_results, key=lambda x: x["score"], reverse=True)
+    return rrf_results
 
 
 def normalize_scores(scores: list[float]) -> list[float]:
