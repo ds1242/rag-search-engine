@@ -1,6 +1,6 @@
 import argparse
 
-from lib.hybrid_search import normalize_scores, weighted_search_command
+from lib.hybrid_search import normalize_scores, weighted_search_command, rrf_search_command
 
 
 def main() -> None:
@@ -28,6 +28,11 @@ def main() -> None:
         "--limit", type=int, default=5, help="Number of results to return (default=5)"
     )
 
+    rrf_parser = subparsers.add_parser("rrf-search", help="search using rrf to obtain better results")
+    rrf_parser.add_argument("query", type=str, help="query string to search")
+    rrf_parser.add_argument("--k", type=int, default=60, help="optional k value to tune search results, default = 60")
+    rrf_parser.add_argument("--limit", type=int, default=5, help="optional limit value to adjust returned results, default = 5")
+
     args = parser.parse_args()
 
     match args.command:
@@ -54,6 +59,16 @@ def main() -> None:
                     )
                 print(f"   {res['document'][:100]}...")
                 print()
+        case "rrf-search":
+            results = rrf_search_command(args.query, args.k, args.limit)
+            print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
+            for i, res in enumerate(results["results"], 1):
+                print(f"{i}. {res['title']}")
+                print(f"    RRF Score: {res['score']:.3f}")
+                metadata = res.get("metadata", {})
+                if "bm25_rank" in metadata and "semantic_rank" in metadata:
+                    print(f"    BM25 Rank: {metadata['bm25_rank']}, Semantic Rank {metadata['semantic_rank']}")
+                print(f"    {res['document'][:100]}...")
         case _:
             parser.print_help()
 
