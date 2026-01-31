@@ -36,6 +36,10 @@ class HybridSearch:
         bm25_results = self._bm25_search(query, limit * 500)
         semantic_results = self.semantic_search.search_chunks(query, limit * 500)
 
+        combined = combine_rrf_results(bm25_results, semantic_results, k)
+
+        return combined[:limit]
+
 
 def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict], k):
     rrf_scores = {}
@@ -44,6 +48,7 @@ def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict], 
         doc_id = result['id']
         if doc_id not in rrf_scores:
             rrf_scores[doc_id] = {
+                "title": result['title'],
                 "document": result['document'],
                 "bm25_rank": i + 1,
                 "semantic_rank": 0,
@@ -52,10 +57,11 @@ def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict], 
         else:
             rrf_scores[doc_id]['bm25_rank'] = i + 1
 
-    for i, result in semantic_results:
+    for i, result in enumerate(semantic_results):
         doc_id = result['id']
         if doc_id not in rrf_scores:
             rrf_scores[doc_id] = {
+                "title": result['title'],
                 "document": result['document'],
                 "bm25_rank": 0,
                 "semantic_rank": i + 1,
@@ -72,16 +78,12 @@ def combine_rrf_results(bm25_results: list[dict], semantic_results: list[dict], 
             title=data["title"],
             document=data["document"],
             score=score_value,
-            bm25_score=data["bm25_score"],
-            semantic_score=data["semantic_score"],
+            bm25_rank=data["bm25_rank"],
+            semantic_rank=data["semantic_rank"],
         )
         rrf_results.append(result)
 
     return sorted(rrf_results, key=lambda x: x["score"], reverse=True)
-
-
-
-
 
 
 def normalize_scores(scores: list[float]) -> list[float]:
@@ -187,7 +189,18 @@ def weighted_search_command(
 
 
 def rrf_search_command(query: str, k: int, limit: int):
-    pass
+    movies = load_movies()
+    searcher = HybridSearch(movies)
+
+    original_query = query
+
+    results = searcher.rrf_search(query, k, limit)
+
+    return {
+        "query": original_query,
+        "k_value": k,
+        "results": results,
+    }
 
 def rrf_score(rank, k=60):
     return 1 / (k + rank)

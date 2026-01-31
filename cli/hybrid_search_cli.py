@@ -1,6 +1,6 @@
 import argparse
 
-from lib.hybrid_search import normalize_scores, weighted_search_command
+from lib.hybrid_search import normalize_scores, weighted_search_command, rrf_search_command
 
 
 def main() -> None:
@@ -61,6 +61,14 @@ def main() -> None:
                 print()
         case "rrf-search":
             results = rrf_search_command(args.query, args.k, args.limit)
+            print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
+            for i, res in enumerate(results["results"], 1):
+                print(f"{i}. {res['title']}")
+                print(f"    RRF Score: {res['score']}")
+                metadata = res.get("metadata", {})
+                if "bm25_rank" in metadata and "semantic_rank" in metadata:
+                    print(f"    BM25 Rank: {metadata['bm25_rank']}, Semantic Rank {metadata['semantic_rank']}")
+                print(f"    {res['document'][:100]}...")
         case _:
             parser.print_help()
 
