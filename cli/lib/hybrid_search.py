@@ -194,7 +194,6 @@ def weighted_search_command(
 def rrf_search_command(query: str, k: int, limit: int):
     movies = load_movies()
     searcher = HybridSearch(movies)
-
     original_query = query
 
     results = searcher.rrf_search(query, k, limit)
