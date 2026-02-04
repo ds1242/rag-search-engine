@@ -70,9 +70,11 @@ def main() -> None:
             else:
                 query = args.query
             
-            print(query)
-            results = rrf_search_command(query, args.k, args.limit)
+            corrected_query = query.lower()
+            results = rrf_search_command(corrected_query, args.k, args.limit)
             print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
+            if args.enhance == "spell":
+                print(f"Enhanced query ({args.enhance}): '{args.query}' -> '{query}'\n")
             for i, res in enumerate(results["results"], 1):
                 print(f"{i}. {res['title']}")
                 print(f"    RRF Score: {res['score']:.3f}")
@@ -84,7 +86,7 @@ def main() -> None:
             parser.print_help()
 
 
-def query_model(query: str):
+def query_model(query: str) -> str:
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
     
