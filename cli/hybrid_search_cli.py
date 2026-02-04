@@ -1,4 +1,7 @@
+import os
 import argparse
+from dotenv import load_dotenv
+from google import genai
 
 from lib.hybrid_search import normalize_scores, weighted_search_command, rrf_search_command
 
@@ -61,7 +64,14 @@ def main() -> None:
                 print(f"   {res['document'][:100]}...")
                 print()
         case "rrf-search":
-            results = rrf_search_command(args.query, args.k, args.limit)
+            query = ""
+            if args.enhance == "spell":
+                query = query_model(args.query)
+            else:
+                query = args.query
+            
+            print(query)
+            results = rrf_search_command(query, args.k, args.limit)
             print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
             for i, res in enumerate(results["results"], 1):
                 print(f"{i}. {res['title']}")
@@ -73,6 +83,26 @@ def main() -> None:
         case _:
             parser.print_help()
 
+
+def query_model(query: str):
+    load_dotenv()
+    api_key = os.environ.get("GEMINI_API_KEY")
+    
+    client = genai.Client(api_key=api_key)
+    response = client.models.generate_content(
+        model='gemini-2.5-flash', contents=f"""
+Fix any spelling errors in this movie search query.
+
+Only correct obvious typos. Don't change correctly spelled words.
+
+Query: "{query}"
+
+If no errors, return the original query.
+Corrected:
+"""
+    )
+    
+    return response.text
 
 if __name__ == "__main__":
     main()
