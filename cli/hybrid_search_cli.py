@@ -1,7 +1,5 @@
 import argparse
-
 from lib.hybrid_search import normalize_scores, weighted_search_command, rrf_search_command
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -32,6 +30,7 @@ def main() -> None:
     rrf_parser.add_argument("query", type=str, help="query string to search")
     rrf_parser.add_argument("--k", type=int, default=60, help="optional k value to tune search results, default = 60")
     rrf_parser.add_argument("--limit", type=int, default=5, help="optional limit value to adjust returned results, default = 5")
+    rrf_parser.add_argument("--enhance", type=str, choices=["spell"], help="query enhancement method")
 
     args = parser.parse_args()
 
@@ -60,8 +59,11 @@ def main() -> None:
                 print(f"   {res['document'][:100]}...")
                 print()
         case "rrf-search":
-            results = rrf_search_command(args.query, args.k, args.limit)
+            results = rrf_search_command(args.query, args.k, args.enhance, args.limit)
+
             print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
+            if results['enhanced_method']:
+                print(f"Enhanced query ({results['enhanced_method']}): '{results['original_query']}' -> '{results['enhanced_query']}'\n")
             for i, res in enumerate(results["results"], 1):
                 print(f"{i}. {res['title']}")
                 print(f"    RRF Score: {res['score']:.3f}")
