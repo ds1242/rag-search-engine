@@ -1,10 +1,5 @@
-import os
 import argparse
-from dotenv import load_dotenv
-from google import genai
-
 from lib.hybrid_search import normalize_scores, weighted_search_command, rrf_search_command
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -64,17 +59,11 @@ def main() -> None:
                 print(f"   {res['document'][:100]}...")
                 print()
         case "rrf-search":
-            query = ""
-            if args.enhance == "spell":
-                query = query_model(args.query)
-            else:
-                query = args.query
-            
-            corrected_query = query.lower()
-            results = rrf_search_command(corrected_query, args.k, args.limit)
+            results = rrf_search_command(args.query, args.k, args.enhance, args.limit)
+
             print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
-            if args.enhance == "spell":
-                print(f"Enhanced query ({args.enhance}): '{args.query}' -> '{query}'\n")
+            if results['enhance']:
+                print(f"Enhanced query ({results['enhance_method']}): '{results['original_query']}' -> '{results['enhanced_query']}'\n")
             for i, res in enumerate(results["results"], 1):
                 print(f"{i}. {res['title']}")
                 print(f"    RRF Score: {res['score']:.3f}")
@@ -85,26 +74,6 @@ def main() -> None:
         case _:
             parser.print_help()
 
-
-def query_model(query: str) -> str:
-    load_dotenv()
-    api_key = os.environ.get("GEMINI_API_KEY")
-    
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model='gemini-2.5-flash', contents=f"""
-Fix any spelling errors in this movie search query.
-
-Only correct obvious typos. Don't change correctly spelled words.
-
-Query: "{query}"
-
-If no errors, return the original query.
-Corrected:
-"""
-    )
-    
-    return response.text
 
 if __name__ == "__main__":
     main()

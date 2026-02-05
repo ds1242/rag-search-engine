@@ -7,6 +7,7 @@ from .search_utils import (
     format_search_result,
     load_movies,
 )
+from typing import Optional
 from .semantic_search import ChunkedSemanticSearch
 
 
@@ -191,15 +192,22 @@ def weighted_search_command(
     }
 
 
-def rrf_search_command(query: str, k: int, limit: int):
+def rrf_search_command(query: str, k: int, enhance: Optional[str], limit: int):
     movies = load_movies()
     searcher = HybridSearch(movies)
     original_query = query
 
+    enhance_query = None
+    if enhance:
+        enhanced_query = enhance_query(query, method=enhance)
+        query = enhanced_query
+
     results = searcher.rrf_search(query, k, limit)
 
     return {
-        "query": original_query,
+        "original_query": original_query,
+        "enhanced_query": enhanced_query,
+        "enhanced_method": enhance,
         "k_value": k,
         "results": results,
     }
