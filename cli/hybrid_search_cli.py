@@ -62,8 +62,8 @@ def main() -> None:
             results = rrf_search_command(args.query, args.k, args.enhance, args.limit)
 
             print(f"RRF Search Results for '{results['query']}, (k = {results['k_value']})")
-            if results['enhance']:
-                print(f"Enhanced query ({results['enhance_method']}): '{results['original_query']}' -> '{results['enhanced_query']}'\n")
+            if results['enhanced_method']:
+                print(f"Enhanced query ({results['enhanced_method']}): '{results['original_query']}' -> '{results['enhanced_query']}'\n")
             for i, res in enumerate(results["results"], 1):
                 print(f"{i}. {res['title']}")
                 print(f"    RRF Score: {res['score']:.3f}")

@@ -1,6 +1,7 @@
 import os
 
 from .keyword_search import InvertedIndex
+from .query_enhancement import enhance_query
 from .search_utils import (
     DEFAULT_ALPHA,
     DEFAULT_SEARCH_LIMIT,
@@ -192,12 +193,12 @@ def weighted_search_command(
     }
 
 
-def rrf_search_command(query: str, k: int, enhance: Optional[str], limit: int):
+def rrf_search_command(query: str, k: int, enhance: Optional[str] = None, limit: int = DEFAULT_SEARCH_LIMIT) -> dict:
     movies = load_movies()
     searcher = HybridSearch(movies)
     original_query = query
 
-    enhance_query = None
+    enhanced_query = None
     if enhance:
         enhanced_query = enhance_query(query, method=enhance)
         query = enhanced_query
@@ -205,6 +206,7 @@ def rrf_search_command(query: str, k: int, enhance: Optional[str], limit: int):
     results = searcher.rrf_search(query, k, limit)
 
     return {
+        "query": query,
         "original_query": original_query,
         "enhanced_query": enhanced_query,
         "enhanced_method": enhance,
