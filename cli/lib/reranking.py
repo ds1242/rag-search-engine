@@ -43,12 +43,14 @@ Score:"""
 
 def llm_rerank_batch(query: str, documents: list[dict], limit: int = 5) -> list[dict]:
     doc_list_str = ""
+    doc_list = []
 
     for doc in documents:
-        doc_list = []
         doc_list.append(f"{doc['id']}: {doc.get('title','')} - {doc.get('document','')[:200]}")
-        doc_list_str = "\n".join(doc_list)
 
+    
+    doc_map = {doc["id"]: doc for doc in documents}
+    doc_list_str = "\n".join(doc_list)
     prompt = f"""Rank these movies by relevance to the search query.
 
 Query: "{query}"
@@ -61,11 +63,19 @@ Return ONLY the IDs in order of relevance (best match first). Return a valid JSO
 [75, 12, 34, 2, 1]
 """
     response = client.models.generate_content(model=model, contents=prompt)
-    response_object = json.loads((response.text or "").strip())
+    raw = (response.text or "").strip()
+    start = raw.find("[")
+    end = raw.rfind("]")
+    json_str = raw[start : end + 1]
+    ids_in_order = json.loads(json_str)
 
-    print(response_object)
+    reranked = []
+    for i, doc_id in enumerate(ids_in_order, 1):
+        if doc_id in doc_map:
+            doc = doc_map[doc_id]
+            reranked.append({**doc, "batch_rank": i})
 
-    return 
+    return reranked[:limit]
 
 
 def rerank(
