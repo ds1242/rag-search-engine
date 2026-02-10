@@ -106,10 +106,12 @@ def main() -> None:
             for i, res in enumerate(result["results"], 1):
                 print(f"{i}. {res['title']}")
                 if "individual_score" in res:
-                    print(f"   Rerank Score: {res.get('individual_score', 0):.3f}/10")
+                    print(f"    Rerank Score: {res.get('individual_score', 0):.3f}/10")
                 if "batch_rank" in res:
-                    print(f"   Rerank Rank: {res.get('batch_rank', 0)}")
-                print(f"   RRF Score: {res.get('score', 0):.3f}")
+                    print(f"    Rerank Rank: {res.get('batch_rank', 0)}")
+                if "cross_encoder_score" in res:
+                    print(f"    Cross Encoder Score: {res.get('cross_encoder_score', 0):.3f}")
+                print(f"    RRF Score: {res.get('score', 0):.3f}")
                 metadata = res.get("metadata", {})
                 ranks = []
                 if metadata.get("bm25_rank"):

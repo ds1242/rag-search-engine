@@ -106,5 +106,7 @@ def rerank(
         return llm_rerank_individual(query, documents, limit)
     if method == "batch":
         return llm_rerank_batch(query, documents, limit)
+    if method == "cross_encoder":
+        return cross_encode_rank(query, documents, limit)
     else:
         return documents[:limit]
