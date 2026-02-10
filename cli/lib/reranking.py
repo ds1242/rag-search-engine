@@ -42,15 +42,20 @@ Score:"""
     return scored_docs[:limit]
 
 def llm_rerank_batch(query: str, documents: list[dict], limit: int = 5) -> list[dict]:
-    doc_list_str = ""
+    if not documents:
+        return []
+
+    doc_map = {}
     doc_list = []
-
     for doc in documents:
-        doc_list.append(f"{doc['id']}: {doc.get('title','')} - {doc.get('document','')[:200]}")
-
+        doc_id = doc["id"]
+        doc_map[doc_id] = doc
+        doc_list.append(
+            f"{doc_id}: {doc.get('title', '')} - {doc.get('document', '')[:200]}"
+        )
     
-    doc_map = {doc["id"]: doc for doc in documents}
     doc_list_str = "\n".join(doc_list)
+
     prompt = f"""Rank these movies by relevance to the search query.
 
 Query: "{query}"
