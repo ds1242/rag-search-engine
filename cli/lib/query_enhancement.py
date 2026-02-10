@@ -1,18 +1,17 @@
 import os
-import time
 from typing import Optional
+
 from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
-api_key = os.environ.get("GEMINI_API_KEY")
-    
+api_key = os.getenv("gemini_api_key")
 client = genai.Client(api_key=api_key)
-model = 'gemini-2.5-flash'
+model = "gemini-2.5-flash"
+
 
 def spell_correct(query: str) -> str:
-    prompt = f"""
-Fix any spelling errors in this movie search query.
+    prompt = f"""Fix any spelling errors in this movie search query.
 
 Only correct obvious typos. Don't change correctly spelled words.
 
@@ -20,13 +19,11 @@ Query: "{query}"
 
 If no errors, return the original query.
 Corrected:"""
-    response = client.models.generate_content(
-        model=model, contents=prompt
-    )
 
+    response = client.models.generate_content(model=model, contents=prompt)
     corrected = (response.text or "").strip().strip('"')
-    
     return corrected if corrected else query
+
 
 def rewrite_query(query: str) -> str:
     prompt = f"""Rewrite this movie search query to be more specific and searchable.
@@ -48,12 +45,9 @@ Examples:
 
 Rewritten query:"""
 
-    response = client.models.generate_content(
-        model=model, contents=prompt
-    )
-    
-    corrected = (response.text or "").strip().strip('"')
-    return corrected if corrected else query
+    response = client.models.generate_content(model=model, contents=prompt)
+    rewritten = (response.text or "").strip().strip('"')
+    return rewritten if rewritten else query
 
 
 def expand_query(query: str) -> str:
@@ -71,40 +65,11 @@ Examples:
 
 Query: "{query}"
 """
-    response = client.models.generate_content(
-        model=model, contents=prompt
-    )
-    
-    corrected = (response.text or "").strip().strip('"')
-    return corrected if corrected else query
-    
 
-def rerank_query(query: str, docs:list[dict], limit:int) -> list[dict]:
-    for doc in docs:
-        prompt = f"""Rate how well this movie matches the search query.
+    response = client.models.generate_content(model=model, contents=prompt)
+    expanded_terms = (response.text or "").strip().strip('"')
 
-Query: "{query}"
-Movie: {doc.get("title", "")} - {doc.get("document", "")}
-
-Consider:
-- Direct relevance to query
-- User intent (what they're looking for)
-- Content appropriateness
-
-Rate 0-10 (10 = perfect match).
-Give me ONLY the number in your response, no other text or explanation.
-
-Score:"""
-        response = client.models.generate_content(
-            model=model, contents=prompt
-        )
-        score = float((response.text or "0.0").strip().strip('"'))
-        doc['rerank_score'] = score
-        
-        time.sleep(3)
-
-    docs.sort(key=lambda doc: doc['rerank_score'], reverse=True)
-    return docs[:limit]
+    return f"{query} {expanded_terms}"
 
 
 def enhance_query(query: str, method: Optional[str] = None) -> str:
@@ -117,4 +82,3 @@ def enhance_query(query: str, method: Optional[str] = None) -> str:
             return expand_query(query)
         case _:
             return query
-
