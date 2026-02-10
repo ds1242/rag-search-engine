@@ -1,6 +1,7 @@
 import os
 import json
 from time import sleep
+from sentence_transformers import CrossEncoder
 
 from dotenv import load_dotenv
 from google import genai
@@ -82,6 +83,21 @@ Return ONLY the IDs in order of relevance (best match first). Return a valid JSO
 
     return reranked[:limit]
 
+def cross_encode_rank(query: str, docs: list[dict], limit: int):
+    pairs = []
+    cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L2-v2")
+
+    for doc in docs:
+        pairs.append([query, f"{doc.get('title', '')} - {doc.get('document', '')}"])
+
+    scores = cross_encoder.predict(pairs)
+
+    for i, doc in enumerate(docs):
+        doc['cross_encoder_score'] = scores[i]
+
+    docs.sort(key=lambda x: x["cross_encoder_score"], reverse=True)
+
+    return docs[:limit]
 
 def rerank(
     query: str, documents: list[dict], method: str = "batch", limit: int = 5
