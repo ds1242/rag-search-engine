@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Optional
 from dotenv import load_dotenv
 from google import genai
@@ -77,6 +78,34 @@ Query: "{query}"
     corrected = (response.text or "").strip().strip('"')
     return corrected if corrected else query
     
+
+def rerank_query(query: str, docs:list[dict], limit:int) -> list[dict]:
+    for doc in docs:
+        prompt = f"""Rate how well this movie matches the search query.
+
+Query: "{query}"
+Movie: {doc.get("title", "")} - {doc.get("document", "")}
+
+Consider:
+- Direct relevance to query
+- User intent (what they're looking for)
+- Content appropriateness
+
+Rate 0-10 (10 = perfect match).
+Give me ONLY the number in your response, no other text or explanation.
+
+Score:"""
+        response = client.models.generate_content(
+            model=model, contents=prompt
+        )
+        score = float((response.text or "0.0").strip().strip('"'))
+        doc['rerank_score'] = score
+        
+        time.sleep(3)
+
+    docs.sort(key=lambda doc: doc['rerank_score'], reverse=True)
+    return docs[:limit]
+
 
 def enhance_query(query: str, method: Optional[str] = None) -> str:
     match method:

@@ -1,7 +1,7 @@
 import os
 
 from .keyword_search import InvertedIndex
-from .query_enhancement import enhance_query
+from .query_enhancement import enhance_query, rerank_query
 from .search_utils import (
     DEFAULT_ALPHA,
     DEFAULT_SEARCH_LIMIT,
@@ -193,7 +193,7 @@ def weighted_search_command(
     }
 
 
-def rrf_search_command(query: str, k: int, enhance: Optional[str] = None, limit: int = DEFAULT_SEARCH_LIMIT) -> dict:
+def rrf_search_command(query: str, k: int, enhance: Optional[str] = None, limit: int = DEFAULT_SEARCH_LIMIT, rerank_results: str = "") -> dict:
     movies = load_movies()
     searcher = HybridSearch(movies)
     original_query = query
@@ -202,8 +202,11 @@ def rrf_search_command(query: str, k: int, enhance: Optional[str] = None, limit:
     if enhance:
         enhanced_query = enhance_query(query, method=enhance)
         query = enhanced_query
-
-    results = searcher.rrf_search(query, k, limit)
+    if rerank_results != "":
+        results = searcher.rrf_search(query, k, limit * 5)
+        results = rerank_query(query, results, limit)
+    else:
+        results = searcher.rrf_search(query, k, limit)
 
     return {
         "query": query,
@@ -212,6 +215,7 @@ def rrf_search_command(query: str, k: int, enhance: Optional[str] = None, limit:
         "enhanced_method": enhance,
         "k_value": k,
         "results": results,
+        "limit": limit
     }
 
 def rrf_score(rank, k=60):
