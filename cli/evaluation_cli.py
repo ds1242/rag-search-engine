@@ -46,9 +46,9 @@ def main():
 
     for res in results:
         print(f"- Query: {res['query']}")
-        print(f"    - Precision@{limit}: {len(res['relavent_title'])/ len(res['retrieved_titles'])}")
-        print(f"    - Retrieved: {res['retrieved_titles']}") 
-        print(f"    - Relevent: {res['relevent_title']}")
+        print(f"    - Precision@{limit}: {len(res['relevant'])/ len(res['retrieved']):.4f}")
+        print(f"    - Retrieved: {", ".join(res['retrieved'])}") 
+        print(f"    - Relevent: {", ".join(res['relevant'])}")
         
 if __name__ == "__main__":
     main()
