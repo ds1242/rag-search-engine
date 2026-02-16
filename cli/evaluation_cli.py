@@ -1,10 +1,9 @@
 import argparse
-import json
 
-from lib.hybrid_search import rrf_search_command
+from lib.evaluation import evaluate_command
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Search Evaluation CLI")
     parser.add_argument(
         "--limit",
@@ -14,41 +13,16 @@ def main():
     )
 
     args = parser.parse_args()
-    limit = args.limit
+    result = evaluate_command(args.limit)
 
-    # run evaluation logic here
-    with open('data/golden_dataset.json', 'r') as f:
-        data = json.load(f)
-    
-    results = []
-    i = 0
-    for case in data['test_cases']: 
-        curr_res = {}
-        retrieved_titles = []
-        relevant_titles = []
-        result = rrf_search_command(query=case['query'], k=60, limit=limit)
-
-        for res in result['results']:
-            retrieved_titles.append(res['title'])
-
-        for title in retrieved_titles:
-            if title in case['relevant_docs']:
-                relevant_titles.append(title)
-        # print(case)
-        curr_res = {
-            'query': case['query'],
-            'relevant': relevant_titles,
-            'retrieved': retrieved_titles,
-        }
-        results.append(curr_res)
-        i += 1
+    print(f"k={args.limit}\n")
+    for query, res in result["results"].items():
+        print(f"- Query: {query}")
+        print(f"  - Precision@{args.limit}: {res['precision']:.4f}")
+        print(f"  - Retrieved: {', '.join(res['retrieved'])}")
+        print(f"  - Relevant: {', '.join(res['relevant'])}")
+        print()
 
 
-    for res in results:
-        print(f"- Query: {res['query']}")
-        print(f"    - Precision@{limit}: {len(res['relevant'])/ len(res['retrieved']):.4f}")
-        print(f"    - Retrieved: {", ".join(res['retrieved'])}") 
-        print(f"    - Relevent: {", ".join(res['relevant'])}")
-        
 if __name__ == "__main__":
     main()
