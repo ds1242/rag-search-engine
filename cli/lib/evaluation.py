@@ -8,13 +8,17 @@ from .semantic_search import SemanticSearch
 
 def precision_at_k(
     retrieved_docs: list[str], relevant_docs: set[str], k: int = 5
-) -> float:
+) -> dict:
     top_k = retrieved_docs[:k]
     relevant_count = 0
     for doc in top_k:
         if doc in relevant_docs:
             relevant_count += 1
-    return relevant_count / k
+    res = {
+        "precision": relevant_count / k,
+        "relevant_count": relevant_count,
+    }
+    return res
 
 
 def evaluate_command(limit: int = 5) -> dict:
@@ -41,12 +45,13 @@ def evaluate_command(limit: int = 5) -> dict:
         precision = precision_at_k(retrieved_docs, relevant_docs, limit)
 
         results_by_query[query] = {
-            "precision": precision,
+            "precision": precision['precision'],
             "retrieved": retrieved_docs[:limit],
             "relevant": list(relevant_docs),
+            "recall":  precision['relevant_count'] / len(relevant_docs)
         }
 
-        total_precision += precision
+        total_precision += precision['precision']
 
     return {
         "test_cases_count": len(test_cases),
