@@ -6,6 +6,8 @@ from lib.hybrid_search import (
     weighted_search_command,
 )
 
+from lib.query_enhancement import llm_evaluate
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -56,6 +58,10 @@ def main() -> None:
     )
     rrf_parser.add_argument(
         "--limit", type=int, default=5, help="Number of results to return (default=5)"
+    )
+
+    rrf_parser.add_argument(
+        "--evaluate", action='store_true', help="flag to have an LLM evaluate a command"
     )
 
     args = parser.parse_args()
@@ -120,8 +126,17 @@ def main() -> None:
                     ranks.append(f"Semantic Rank: {metadata['semantic_rank']}")
                 if ranks:
                     print(f"    {', '.join(ranks)}")
-                print(f"        {res['document'][:100]}...")
+                print(f"    {res['document'][:100]}...")
                 print()
+
+            eval_results = {}
+            if args.evaluate:
+                print("LLM Evaluation (0-3 relevance scale):")
+                eval_results = llm_evaluate(result['query'], result['results'])
+
+            for i, eval in enumerate(eval_results['title_evals'], 1):
+                print(f"{i}. {eval[0]}: {eval[1]}/{eval_results['max_score']}")
+                
         case _:
             parser.print_help()
 
