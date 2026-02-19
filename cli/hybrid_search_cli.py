@@ -119,8 +119,8 @@ def main() -> None:
                 if metadata.get("semantic_rank"):
                     ranks.append(f"Semantic Rank: {metadata['semantic_rank']}")
                 if ranks:
-                    print(f"   {', '.join(ranks)}")
-                print(f"   {res['document'][:100]}...")
+                    print(f"    {', '.join(ranks)}")
+                print(f"        {res['document'][:100]}...")
                 print()
         case _:
             parser.print_help()
