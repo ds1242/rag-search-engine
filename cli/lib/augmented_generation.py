@@ -59,6 +59,56 @@ Provide a comprehensive 3–4 sentence answer that combines information from mul
     response = client.models.generate_content(model=model, contents=prompt)
     return (response.text or "").strip()
 
+def citations(search_results, query, limit=5):
+    docs_text = ""
+    for i, result in enumerate(search_results[:limit], start=1):
+        docs_text += f"Document {i}: {result['title']}; {result['document']}\n\n"
+
+    prompt = f"""Answer the question or provide information based on the provided documents.
+
+This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+
+If not enough information is available to give a good answer, say so but give as good of an answer as you can while citing the sources you have.
+
+Query: {query}
+
+Documents:
+{docs_text}
+
+Instructions:
+- Provide a comprehensive answer that addresses the query
+- Cite sources using [1], [2], etc. format when referencing information
+- If sources disagree, mention the different viewpoints
+- If the answer isn't in the documents, say "I don't have enough information"
+- Be direct and informative
+
+Answer:"""
+    response = client.models.generate_content(model=model, contents=prompt)
+    return (response.text or "").strip()
+
+def question(search_results, query, limit=5):
+    documents = ""
+    for i, result in enumerate(search_results[:limit], start=1):
+        documents += f"Document {i}: {result['title']}; {result['document']}\n\n"
+    prompt = f"""Answer the user's question based on the provided movies that are available on Hoopla.
+
+This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+
+Question: {query}
+
+Documents:
+{documents}
+
+Instructions:
+- Answer questions directly and concisely
+- Be casual and conversational
+- Don't be cringe or hype-y
+- Talk like a normal person would in a chat conversation
+
+Answer:"""
+
+    response = client.models.generate_content(model=model, contents=prompt)
+    return (response.text or "").strip()
 
 def rag(query, limit=DEFAULT_SEARCH_LIMIT):
     movies = load_movies()
@@ -106,3 +156,33 @@ def summarize_command(query, limit=5):
         "summary": summary,
         "search_results": search_results[:limit],
     }
+
+
+def citations_command(query: str, limit: int = 5) -> dict:
+    movies = load_movies()
+    hybrid_search = HybridSearch(movies)
+
+    search_results = hybrid_search.rrf_search(query, k=RRF_K, limit=limit * SEARCH_MULTIPLIER)
+
+    cited_summaries = citations(search_results, query, limit)
+
+    return {
+        "query": query,
+        "cited_summary": cited_summaries,
+        "search_results": search_results[:limit]
+    }
+
+def question_command(query: str, limit: int = 5) -> dict:
+    movies = load_movies()
+    hybrid_search = HybridSearch(movies)
+
+    search_results = hybrid_search.rrf_search(query, k=RRF_K, limit=limit * SEARCH_MULTIPLIER)
+
+    llm_answer = question(search_results, query, limit)
+    return {
+        "query": query,
+        "answer": llm_answer,
+        "search_results": search_results[:limit]
+    }
+
+
