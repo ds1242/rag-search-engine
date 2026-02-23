@@ -1,6 +1,6 @@
 import argparse
 
-from lib.augmented_generation import rag_command, summarize_command, citations_command
+from lib.augmented_generation import rag_command, summarize_command, citations_command, question_command
 
 
 
@@ -57,7 +57,6 @@ def main():
             print()
             print("LLM Summary:")
             print(result["summary"])
-
         case "citations":
             result = citations_command(args.query, args.limit) 
             print("Search Results:")
@@ -66,6 +65,14 @@ def main():
             print()
             print("LLM Answer:")
             print(result['cited_summary'])
+        case "question":
+            result = question_command(args.question, args.limit)
+            print("Search Results:")
+            for document in result["search_results"]:
+                print(f"    -{document["title"]}")
+            print()
+            print("Answer:")
+            print(result["answer"])
         case _:
             parser.print_help()
 
